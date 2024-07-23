@@ -16,16 +16,10 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
   ],
-  // callbacks: {
-  //   async session({ session, user }) {
-  //     session.user.id = user.id;
-  //     return session;
-  //   },
-  //   async signIn({ user, account, profile }) {
-  //     if (account.provider === "google" || account.provider === "github") {
-  //       return true;
-  //     }
-  //     return false;
-  //   },
-  // },
+  callbacks: {
+    session: async ({ session, user }) => {
+      console.log(session, user);
+      return session;
+    },
+  },
 };

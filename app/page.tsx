@@ -1,11 +1,16 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Cursor, Typewriter } from "react-simple-typewriter";
 import TaskLogo from "../app/src/icons/TaskLogo.svg";
 import ButtonsProvider from "./components/ButtonsProvider";
 
 export default function Home() {
+  const { data: session } = useSession();
+
+  console.log(session);
+
   return (
     <section className="w-full h-screen flex items-center justify-center flex-col gap-2">
       <Image
