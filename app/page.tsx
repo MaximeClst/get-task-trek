@@ -2,12 +2,17 @@
 
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { Cursor, Typewriter } from "react-simple-typewriter";
 import TaskLogo from "../app/src/icons/TaskLogo.svg";
 import ButtonsProvider from "./components/ButtonsProvider";
 
 export default function Home() {
   const { data: session } = useSession();
+
+  if (session) {
+    redirect("/dashboard/notes");
+  }
 
   console.log(session);
 
