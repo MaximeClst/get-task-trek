@@ -6,8 +6,8 @@ import PremiumBadge from "../src/icons/PremiumBadge.svg";
 
 export default function PagePayment() {
   const itemsPremium = [
-    { name: "Notes illimitées" },
-    { name: "Intégration de l'intelligence artificielle" },
+    { name: "Notes Illimitées" },
+    { name: "Intégration de l'Intelligence Artificielle" },
     { name: "Support Technique et Mises à jour" },
   ];
 
@@ -27,6 +27,24 @@ export default function PagePayment() {
           <p className="mt-4 text-muted-foreground">
             Débloquer un nouveau niveau de productivité personnelle 💥
           </p>
+          <div className="flex-1 flex flex-col justify-between px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
+            <ul className="space-y-3">
+              {itemsPremium.map((item, index) => (
+                <li
+                  key={index}
+                  className="flex items-center gap-2 text-muted-foreground"
+                >
+                  <span>✅</span>
+                  <span>{item.name}</span>
+                </li>
+              ))}
+            </ul>
+            <form action="" className="w-full mt-4">
+              <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
+                Devenir membre Premium
+              </Button>
+            </form>
+          </div>
         </CardContent>
       </Card>
     </div>
