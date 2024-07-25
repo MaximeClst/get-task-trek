@@ -10,13 +10,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createNote } from "@/lib/actionsNotes";
+import { getNote, updateNote } from "@/lib/actionsNotes";
 import Link from "next/link";
 
-export default function CreatePage() {
+interface Params {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+}
+
+interface UpdatePageProps {
+  params: Params;
+}
+
+export default async function PageNote({ params }: UpdatePageProps) {
+  const note = await getNote(params.id);
+
   return (
     <Card>
-      <form action={createNote}>
+      <form action={updateNote}>
+        <Input type="hidden" name="id" value={note?.id as string} />
         <CardHeader>
           <CardTitle>Nouvelle note</CardTitle>
           <CardDescription>Quelques mots pour ne pas oublier</CardDescription>
@@ -25,6 +39,7 @@ export default function CreatePage() {
           <div className="gap-y-2 flex flex-col">
             <Label htmlFor="title">Titre</Label>
             <Input
+              defaultValue={note?.title as string}
               type="text"
               name="title"
               id="title"
@@ -35,6 +50,7 @@ export default function CreatePage() {
           <div className="gap-y-2 flex flex-col">
             <Label htmlFor="title">Description</Label>
             <Textarea
+              defaultValue={note?.description as string}
               name="description"
               id="description"
               required
@@ -44,6 +60,7 @@ export default function CreatePage() {
           <div className="gap-y-2 flex flex-col">
             <Label htmlFor="title">En attente | Complet</Label>
             <Input
+              defaultChecked={note?.completed as boolean}
               type="checkbox"
               name="completed"
               id="completed"
@@ -62,7 +79,7 @@ export default function CreatePage() {
             type="submit"
             className="bg-purple-400 hover:bg-purple-500 text-white"
           >
-            Créer une note
+            Modifier la note
           </Button>
         </CardFooter>
       </form>

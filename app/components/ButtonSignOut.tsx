@@ -17,7 +17,7 @@ export default function ButtonSignOut() {
     <div className="flex items-center justify-end mb-2 lg:mt-0 p-3">
       <Button
         onClick={handleSignOut}
-        className="bg-purple-400 hover:bg-purple-500 text-white"
+        className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
       >
         <LogOut />
       </Button>

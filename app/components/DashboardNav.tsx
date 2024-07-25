@@ -19,8 +19,9 @@ export default function DashboardNav() {
         return (
           <Link href={link.path}>
             <div
-              className={`flex items-center justify-center lg:justify-start gap-2 cursor-pointer lg:p-3 p-2 hover:bg-purple-400 hover:bg-opacity-50 hover:text-white text-sm font-bold rounded-md ${
-                isActive && "bg-purple-400 text-white"
+              className={`flex items-center justify-center lg:justify-start gap-2 cursor-pointer lg:p-3 p-2 hover:bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:bg-opacity-50 hover:text-white text-sm font-bold rounded-md ${
+                isActive &&
+                "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
               }`}
             >
               <link.icon className="w-4" />

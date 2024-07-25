@@ -11,14 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getUser, updateUser } from "@/lib/actionsUsers";
 import Image from "next/image";
-// import { toast } from "react-toastify";
 
 export default async function PageSettings() {
   const user = await getUser();
-
-  // const handleSubmit = () => {
-  //   toast.success("Compte modifié avec succès");
-  // };
 
   return (
     <section className="border border-gray-200 rounded-md p-3">
