@@ -9,7 +9,6 @@ import Link from "next/link";
 export default async function PageNotes() {
   const user = await getUser();
   const data = await getAllNotes(user?.id as string);
-
   return (
     <section className="grid items-start gap-y-4">
       <div className="flex items-center md:items-center md:justify-between flex-col md:flex-row px-2">
@@ -30,7 +29,7 @@ export default async function PageNotes() {
           <div className="w-16 h-16 rounded-full flex items-center justify-center bg-purple-800 bg-opacity-20 mb-4">
             <File />
           </div>
-          <p className="text-lg text-white">Vous n'avez aucune note</p>
+          <p className="">Vous n'avez aucune note</p>
           <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white mt-4">
             <Link href="/dashboard/notes/create">Crée une nouvelle note</Link>
           </Button>
