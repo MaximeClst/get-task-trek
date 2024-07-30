@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getUser, updateUser } from "@/lib/actionsUsers";
+import { deleteUser, getUser, updateUser } from "@/lib/actionsUsers";
 import Image from "next/image";
 
 export default async function PageSettings() {
@@ -75,13 +75,13 @@ export default async function PageSettings() {
             <Button type="submit">Modifier</Button>
           </CardFooter>
         </Card>
+      </form>
 
-        <form action="">
-          <Input type="hidden" name="id" value="" />
-          <Button className="bg-red-500 mx-1 my-2 hover:bg-red-600 text-white">
-            Supprimer votre compte
-          </Button>
-        </form>
+      <form action={deleteUser}>
+        <Input type="hidden" name="id" value="" />
+        <Button className="bg-red-500 mx-1 my-2 hover:bg-red-600 text-white">
+          Supprimer votre compte
+        </Button>
       </form>
     </section>
   );

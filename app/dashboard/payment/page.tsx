@@ -1,15 +1,55 @@
+import PremiumBadge from "@/app/src/icons/PremiumBadge.svg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  createCustomerPortal,
+  createSubscription,
+  getDataStripeUser,
+} from "@/lib/actionsStripe";
 import { getUser } from "@/lib/actionsUsers";
 import Image from "next/image";
-import PremiumBadge from "../src/icons/PremiumBadge.svg";
 
-export default function PagePayment() {
+export default async function PagePayment() {
+  const user = await getUser();
+
+  const dataStripe = await getDataStripeUser(user?.id as string);
+
   const itemsPremium = [
     { name: "Notes Illimitées" },
     { name: "Intégration de l'Intelligence Artificielle" },
     { name: "Support Technique et Mises à jour" },
   ];
+
+  if (dataStripe?.status === "active") {
+    return (
+      <div className="max-w-lg mx-auto space-y-4 my-3">
+        <Card className="flex flex-col">
+          <CardContent className="py-8">
+            <div>
+              <h3 className="text-md font-black uppercase bg-purple-900 bg-opacity-20 text-purple-400 p-3 rounded-md inline">
+                Pass Premium
+              </h3>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Modifier votre abonnement premium
+              </p>
+              <Image
+                src={PremiumBadge}
+                width={100}
+                height={100}
+                alt="batdge"
+                className="block my-4"
+              />
+              <form className="w-full mt-4" action={createCustomerPortal}>
+                <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500">
+                  Modifier abonnement
+                </Button>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto space-y-4 mt-3">
@@ -39,7 +79,7 @@ export default function PagePayment() {
                 </li>
               ))}
             </ul>
-            <form action="" className="w-full mt-4">
+            <form action={createSubscription} className="w-full mt-4">
               <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
                 Devenir membre Premium
               </Button>
