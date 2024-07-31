@@ -62,8 +62,8 @@ export default async function PagePayment() {
               Pass Premium
               <Image
                 src={PremiumBadge}
-                width={16}
-                height={16}
+                width={100}
+                height={100}
                 alt="badge"
                 className="block my-4"
               />
