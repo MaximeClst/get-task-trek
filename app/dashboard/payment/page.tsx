@@ -14,10 +14,12 @@ export default async function PagePayment() {
 
   const dataStripe = await getDataStripeUser(user?.id as string);
 
+  const itemsBasic = [{ name: "100 notes" }];
   const itemsPremium = [
-    { name: "Notes Illimitées" },
-    { name: "Intégration de l'Intelligence Artificielle" },
-    { name: "Support Technique et Mises à jour" },
+    { name: "500 notes" },
+    { name: "Calendrier de rappel" },
+    { name: "Assistant IA" },
+    { name: "Intégrer votre adresse email" },
   ];
 
   if (dataStripe?.status === "active") {
@@ -34,9 +36,9 @@ export default async function PagePayment() {
               </p>
               <Image
                 src={PremiumBadge}
-                width={100}
-                height={100}
-                alt="batdge"
+                width={16}
+                height={16}
+                alt="badge"
                 className="block my-4"
               />
               <form className="w-full mt-4" action={createCustomerPortal}>
@@ -58,6 +60,13 @@ export default async function PagePayment() {
           <div>
             <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
               Pass Premium
+              <Image
+                src={PremiumBadge}
+                width={16}
+                height={16}
+                alt="badge"
+                className="block my-4"
+              />
             </h3>
           </div>
           <div className="mt-4 text-6xl font-black">
