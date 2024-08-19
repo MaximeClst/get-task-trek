@@ -42,6 +42,11 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
+enum Plan {
+  BASIC
+  PREMIUM
+}
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
