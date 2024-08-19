@@ -6,6 +6,7 @@ import {
   getDataStripeUser,
 } from "@/lib/actionsStripe";
 import { getUser } from "@/lib/actionsUsers";
+import { signIn } from "next-auth/react";
 
 export default async function PagePayment() {
   const user = await getUser();
@@ -71,10 +72,7 @@ export default async function PagePayment() {
             <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
               FREE
             </h2>
-            <p className="mb-5 font-light text-gray-500 dark:text-gray-400 sm:text-xl">
-              We offer a simple plan for everyone.
-            </p>
-            <div className="flex-1 flex flex-col justify-between px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
+            <div className="flex-1 flex justify-center px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
               <ul className="space-y-3">
                 {itemsBasic.map((item, index) => (
                   <li key={index} className="flex items-center gap-2">
@@ -83,11 +81,12 @@ export default async function PagePayment() {
                   </li>
                 ))}
               </ul>
-              <form action={createSubscription} className="w-full mt-4">
-                <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
-                  Sign Up
-                </Button>
-              </form>
+              <Button
+                className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
+                onClick={() => signIn}
+              >
+                Sign Up
+              </Button>
             </div>
           </CardContent>
         </Card>
