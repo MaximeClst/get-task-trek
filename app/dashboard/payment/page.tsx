@@ -49,13 +49,13 @@ export default async function PagePayment() {
     <section>
       <div className="mx-auto mb-8 max-w-screen-md text-center lg:mb-12">
         <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Increase your testimonials by 2
+          Find the ideal package
         </h2>
         <p className="mb-5 font-light text-gray-500 dark:text-gray-400 sm:text-xl">
           We offer a simple plan for everyone.
         </p>
       </div>
-      <div className="max-w-lg mx-auto space-y-4 mt-3">
+      <div className="max-w-lg mx-auto space-y-4 mt-3 flex-1 gap-4">
         <Card
           style={{
             width: 300,
@@ -69,7 +69,7 @@ export default async function PagePayment() {
               </h3>
             </div>
             <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-              Make your note
+              FREE
             </h2>
             <p className="mb-5 font-light text-gray-500 dark:text-gray-400 sm:text-xl">
               We offer a simple plan for everyone.
