@@ -12,12 +12,11 @@ export default async function PagePayment() {
 
   const dataStripe = await getDataStripeUser(user?.id as string);
 
-  const itemsBasic = [{ name: "100 notes" }];
+  const itemsBasic = [{ name: "Get 100 notes" }];
   const itemsPremium = [
-    { name: "500 notes" },
-    { name: "Calendrier de rappel" },
-    { name: "Assistant IA" },
-    { name: "Intégrer votre adresse email" },
+    { name: "Unlimited notes" },
+    { name: "Calendar" },
+    { name: "AI assistant" },
   ];
 
   if (dataStripe?.status === "active") {
@@ -55,7 +54,7 @@ export default async function PagePayment() {
           We offer a simple plan for everyone.
         </p>
       </div>
-      <div className="flex justify-center gap-4 max-lg:flex-col">
+      <div className="flex flex-row justify-center gap-4 max-lg:flex-col">
         <Card
           style={{
             width: 300,
@@ -65,11 +64,14 @@ export default async function PagePayment() {
           <CardContent className="py-8">
             <div>
               <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                FREE
+                Starter
               </h3>
             </div>
+            <div className="mt-4 text-6xl font-black">
+              <span>FREE</span>
+            </div>
             <p className="mt-4 text-muted-foreground">Testing our product</p>
-            <div className="flex-1 flex justify-center px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
+            <div className="flex-1 flex flex-col justify-between px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
               <ul className="space-y-3">
                 {itemsBasic.map((item, index) => (
                   <li key={index} className="flex items-start gap-2">
@@ -80,15 +82,22 @@ export default async function PagePayment() {
               </ul>
             </div>
           </CardContent>
+        </Card>
 
+        <Card
+          style={{
+            width: 300,
+          }}
+          className="h-fit flex-1"
+        >
           <CardContent className="py-8">
             <div>
               <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                Pass Premium
+                Premium
               </h3>
             </div>
             <div className="mt-4 text-6xl font-black">
-              <span>15.99 €</span>
+              <span>8.99 €</span>
               <span className="text-sm text-muted-foreground">/per month</span>
             </div>
             <p className="mt-4 text-muted-foreground">
