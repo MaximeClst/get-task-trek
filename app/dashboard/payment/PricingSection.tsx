@@ -6,7 +6,6 @@ import {
   getDataStripeUser,
 } from "@/lib/actionsStripe";
 import { getUser } from "@/lib/actionsUsers";
-import { signIn } from "next-auth/react";
 
 export default async function PagePayment() {
   const user = await getUser();
@@ -81,12 +80,12 @@ export default async function PagePayment() {
                   </li>
                 ))}
               </ul>
-              <Button
+              {/* <Button
                 className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
                 onClick={() => signIn}
               >
                 Sign Up
-              </Button>
+              </Button> */}
             </div>
           </CardContent>
         </Card>
