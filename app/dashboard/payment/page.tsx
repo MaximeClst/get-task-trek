@@ -6,6 +6,7 @@ import {
   getDataStripeUser,
 } from "@/lib/actionsStripe";
 import { getUser } from "@/lib/actionsUsers";
+import Link from "next/link";
 
 export default async function PagePayment() {
   const user = await getUser();
@@ -80,6 +81,11 @@ export default async function PagePayment() {
                   </li>
                 ))}
               </ul>
+              <Link href="/" className="w-full mt-4">
+                <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
+                  Sign Up
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
