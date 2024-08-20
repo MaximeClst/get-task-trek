@@ -6,6 +6,7 @@ import {
   getDataStripeUser,
 } from "@/lib/actionsStripe";
 import { getUser } from "@/lib/actionsUsers";
+import { signIn } from "next-auth/react";
 
 export default async function PagePayment() {
   const user = await getUser();
@@ -55,7 +56,7 @@ export default async function PagePayment() {
           We offer a simple plan for everyone.
         </p>
       </div>
-      <div className="max-w-lg mx-auto space-y-4 mt-3 flex-1 gap-4">
+      <div className="flex-1 justify-center gap-4">
         <Card
           style={{
             width: 300,
@@ -80,12 +81,12 @@ export default async function PagePayment() {
                   </li>
                 ))}
               </ul>
-              {/* <Button
+              <Button
                 className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
                 onClick={() => signIn}
               >
                 Sign Up
-              </Button> */}
+              </Button>
             </div>
           </CardContent>
         </Card>
