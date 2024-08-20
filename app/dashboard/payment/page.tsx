@@ -55,7 +55,7 @@ export default async function PagePayment() {
           We offer a simple plan for everyone.
         </p>
       </div>
-      <div className="flex-1 justify-center gap-4">
+      <div className="flex justify-center gap-4 max-lg:flex-col">
         <Card
           style={{
             width: 300,
@@ -65,12 +65,10 @@ export default async function PagePayment() {
           <CardContent className="py-8">
             <div>
               <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                Basic Pass
+                FREE
               </h3>
             </div>
-            <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-              FREE
-            </h2>
+            <p className="mt-4 text-muted-foreground">Testing our product</p>
             <div className="flex-1 flex justify-center px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
               <ul className="space-y-3">
                 {itemsBasic.map((item, index) => (
@@ -91,7 +89,7 @@ export default async function PagePayment() {
             </div>
             <div className="mt-4 text-6xl font-black">
               <span>15.99 €</span>
-              <span className="text-sm text-muted-foreground">/ per month</span>
+              <span className="text-sm text-muted-foreground">/per month</span>
             </div>
             <p className="mt-4 text-muted-foreground">
               Unlocking a new level of personal productivity 💥
