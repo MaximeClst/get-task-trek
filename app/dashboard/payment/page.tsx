@@ -60,7 +60,7 @@ export default async function PagePayment() {
           style={{
             width: 300,
           }}
-          className="h-fit"
+          className="h-fit flex-1"
         >
           <CardContent className="py-8">
             <div>
@@ -72,7 +72,7 @@ export default async function PagePayment() {
             <div className="flex-1 flex justify-center px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
               <ul className="space-y-3">
                 {itemsBasic.map((item, index) => (
-                  <li key={index} className="flex items-center gap-2">
+                  <li key={index} className="flex items-start gap-2">
                     <span>✅</span>
                     <span>{item.name}</span>
                   </li>
