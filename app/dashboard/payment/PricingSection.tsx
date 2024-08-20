@@ -1,18 +1,14 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { createCustomerPortal, getDataStripeUser } from "@/lib/actionsStripe";
+  createCustomerPortal,
+  createSubscription,
+  getDataStripeUser,
+} from "@/lib/actionsStripe";
 import { getUser } from "@/lib/actionsUsers";
-import { Check } from "lucide-react";
-import { PropsWithChildren } from "react";
+import { signIn } from "next-auth/react";
 
-export default async function PricingSection() {
+export default async function PagePayment() {
   const user = await getUser();
 
   const dataStripe = await getDataStripeUser(user?.id as string);
@@ -51,7 +47,7 @@ export default async function PricingSection() {
   }
 
   return (
-    <section className="bg-white dark:bg-gray-900">
+    <section>
       <div className="mx-auto mb-8 max-w-screen-md text-center lg:mb-12">
         <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
           Find the ideal package
@@ -60,64 +56,73 @@ export default async function PricingSection() {
           We offer a simple plan for everyone.
         </p>
       </div>
-      <div className="flex max-lg:flex-col">
-        <PricingCard
-          title="Starter"
-          price={0}
-          description="To try our product"
-          items={["Create 100 notes"]}
-        />
-        <PricingCard
-          title="Premium"
-          price={15}
-          description="For create any "
-          items={["Create 100 notes"]}
-        />
+      <div className="max-w-lg mx-auto space-y-4 mt-3 flex-1 gap-4">
+        <Card
+          style={{
+            width: 300,
+          }}
+          className="h-fit"
+        >
+          <CardContent className="py-8">
+            <div>
+              <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
+                Basic Pass
+              </h3>
+            </div>
+            <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+              FREE
+            </h2>
+            <div className="flex-1 flex justify-center px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
+              <ul className="space-y-3">
+                {itemsBasic.map((item, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <span>✅</span>
+                    <span>{item.name}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
+                onClick={() => signIn}
+              >
+                Sign Up
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardContent className="py-8">
+            <div>
+              <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
+                Pass Premium
+              </h3>
+            </div>
+            <div className="mt-4 text-6xl font-black">
+              <span>15.99 €</span>
+              <span className="text-sm text-muted-foreground">/ per month</span>
+            </div>
+            <p className="mt-4 text-muted-foreground">
+              Unlocking a new level of personal productivity 💥
+            </p>
+            <div className="flex-1 flex flex-col justify-between px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
+              <ul className="space-y-3">
+                {itemsPremium.map((item, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <span>✅</span>
+                    <span>{item.name}</span>
+                  </li>
+                ))}
+              </ul>
+              <form action={createSubscription} className="w-full mt-4">
+                <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
+                  Devenir membre Premium
+                </Button>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
 }
-const PricingCard = (props: PricingCardProps) => {
-  return (
-    <Card
-      style={{
-        width: 300,
-      }}
-      className="h-fit"
-    >
-      <CardHeader>
-        <CardTitle>{props.title}</CardTitle>
-        <CardDescription>{props.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="my-8 flex items-baseline justify-center">
-        <span className="mr-2 text-5xl font-extrabold">${props.price}</span>
-        <span className="text-muted-foreground">/month</span>
-      </CardContent>
-
-      <CardContent>
-        <ul role="list" className="mb-8 space-y-4 text-left">
-          {props.items.map((item) => (
-            <PricingItem key={item}>{item}</PricingItem>
-          ))}
-        </ul>
-      </CardContent>
-      <CardFooter>{props.children}</CardFooter>
-    </Card>
-  );
-};
-
-type PricingCardProps = PropsWithChildren<{
-  title: string;
-  description: string;
-  items: string[];
-  price: number;
-}>;
-
-const PricingItem = ({ children }: PropsWithChildren) => {
-  return (
-    <li className="flex items-center space-x-3">
-      <Check size={16} className="text-green-500" />
-      <span>{children}</span>
-    </li>
-  );
-};
