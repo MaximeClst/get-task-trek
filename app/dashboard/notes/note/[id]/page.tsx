@@ -57,16 +57,6 @@ export default async function PageNote({ params }: UpdatePageProps) {
               placeholder="...🖋️"
             />
           </div>
-          <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="title">En attente | Complet</Label>
-            <Input
-              defaultChecked={note?.completed as boolean}
-              type="checkbox"
-              name="completed"
-              id="completed"
-              className="w-6 cursor-pointer"
-            />
-          </div>
         </CardContent>
         <CardFooter className="flex items-center justify-between">
           <Button

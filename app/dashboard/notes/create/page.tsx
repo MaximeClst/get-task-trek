@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,11 +14,30 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createNote } from "@/lib/actionsNotes";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function CreatePage() {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      await createNote(new FormData(e.currentTarget as HTMLFormElement));
+      setTitle("");
+      setDescription("");
+      // Redirection ou message de succès ici
+    } catch (err) {
+      if (err instanceof Error) setError(err.message);
+    }
+  };
+
   return (
     <Card>
-      <form action={createNote}>
+      <form onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Nouvelle note</CardTitle>
           <CardDescription>Quelques mots pour ne pas oublier</CardDescription>
@@ -30,24 +51,19 @@ export default function CreatePage() {
               id="title"
               required
               placeholder="Titre de la note"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="title">Description</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               name="description"
               id="description"
               required
               placeholder="...🖋️"
-            />
-          </div>
-          <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="title">En attente | Complet</Label>
-            <Input
-              type="checkbox"
-              name="completed"
-              id="completed"
-              className="w-6 cursor-pointer"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
         </CardContent>
@@ -65,6 +81,7 @@ export default function CreatePage() {
             Créer une note
           </Button>
         </CardFooter>
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
     </Card>
   );

@@ -24,6 +24,17 @@ export const createNote = async (formData: FormData) => {
   const user = await getUser();
   const userId = user?.id as string;
 
+  //Vérifier la limite de 10 notes
+  const userNotesCount = await prisma.notes.count({
+    where: { userId: userId },
+  });
+
+  if (!user?.isPremium && userNotesCount >= 10) {
+    throw new Error(
+      "Vous avez atteint la limite de 10 notes. Passez à Premium pour en créer plus."
+    );
+  }
+
   await prisma.notes.create({
     data: {
       userId: userId,
