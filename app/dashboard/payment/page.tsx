@@ -13,7 +13,7 @@ export default async function PagePayment() {
 
   const dataStripe = await getDataStripeUser(user?.id as string);
 
-  const itemsBasic = [{ name: "Get 100 notes" }];
+  const itemsBasic = [{ name: "Get 10 notes" }, { name: "Edit your notes " }];
   const itemsPremium = [
     { name: "Unlimited notes" },
     { name: "Calendar" },
@@ -107,7 +107,7 @@ export default async function PagePayment() {
               <span className="text-sm text-muted-foreground">/per month</span>
             </div>
             <p className="mt-4 text-muted-foreground">
-              Unlocking a new level of personal productivity 💥
+              Unlocking a new level of personal productivity.
             </p>
             <div className="flex-1 flex flex-col justify-between px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
               <ul className="space-y-3">

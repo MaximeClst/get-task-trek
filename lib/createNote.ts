@@ -37,7 +37,7 @@ export default async function handler(
   }
 
   // Vérifier si l'user est Premium ou si il a atteint 100 notes
-  if (!user.isPremium && user._count.notes >= 100) {
+  if (!user.isPremium && user._count.notes >= 10) {
     return res.status(403).json({
       error:
         "You can't write this note, to write more you have to go to Premium.",
