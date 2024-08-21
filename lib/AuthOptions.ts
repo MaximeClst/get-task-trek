@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
     session: async ({ session, user }) => {
       if (session.user) {
         session.user.id = user.id;
+        session.user.isPremium = user.isPremium;
       }
       return session;
     },
