@@ -28,7 +28,7 @@ export default function CalendarComponent() {
   }, []);
 
   const handleDateClick = (arg: DateClickArg) => {
-    const start = selectInfo.startStr;
+    const start = arg.dateStr;
     router.push(`/dashboard/notes/create?start=${encodeURIComponent(start)}`);
   };
 
@@ -38,7 +38,7 @@ export default function CalendarComponent() {
     router.push(
       `/dashboard/notes/create?start=${encodeURIComponent(
         start
-      )}$end=${encodeURIComponent(end)}`
+      )}&end=${encodeURIComponent(end)}`
     );
 
     return (
@@ -58,7 +58,7 @@ export default function CalendarComponent() {
           events={currentEvents}
           editable={true}
           dayMaxEvents={true}
-          locale="fr" // Définit la langue en français
+          locale="fr"
         />
       </div>
     );
