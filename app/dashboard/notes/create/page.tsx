@@ -14,25 +14,32 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createNote } from "@/lib/actionsNotes";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function CreatePage() {
+  const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+
+  useEffect(() => {
+    const startParam = searchParams.get("start");
+    const endParam = searchParams.get("end");
+
+    if (startParam) setStart(startParam);
+    if (endParam) setEnd(endParam);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    try {
-      await createNote(new FormData(e.currentTarget as HTMLFormElement));
-      setTitle("");
-      setDescription("");
-      // Redirection ou message de succès ici
-    } catch (err) {
-      if (err instanceof Error) setError(err.message);
-    }
+    await createNote({
+      title,
+      description,
+      start,
+      end,
+    });
   };
 
   return (
@@ -60,10 +67,31 @@ export default function CreatePage() {
             <Textarea
               name="description"
               id="description"
-              required
               placeholder="...🖋️"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="gap-y-2 flex flex-col">
+            <Label htmlFor="start">Date de début</Label>
+            <Input
+              type="datetime-local"
+              name="start"
+              id="start"
+              required
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+            />
+          </div>
+          <div className="gap-y-2 flex flex-col">
+            <Label htmlFor="end">Date de fin</Label>
+            <Input
+              type="datetime-local"
+              name="end"
+              id="end"
+              required
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
             />
           </div>
         </CardContent>
@@ -81,7 +109,6 @@ export default function CreatePage() {
             Créer une note
           </Button>
         </CardFooter>
-        {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
     </Card>
   );
