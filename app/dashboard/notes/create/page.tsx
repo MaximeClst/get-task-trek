@@ -27,6 +27,7 @@ export default function CreatePage() {
   useEffect(() => {
     const startParam = searchParams.get("start");
     const endParam = searchParams.get("end");
+    console.log("Start: ", start, "End: ", end);
 
     if (startParam) setStart(startParam);
     if (endParam) setEnd(endParam);

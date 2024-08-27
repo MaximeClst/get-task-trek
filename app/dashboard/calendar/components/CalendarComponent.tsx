@@ -28,39 +28,41 @@ export default function CalendarComponent() {
   }, []);
 
   const handleDateClick = (arg: DateClickArg) => {
-    const start = arg.dateStr;
-    router.push(`/dashboard/notes/create?start=${encodeURIComponent(start)}`);
+    const start = arg.dateStr; // Utilisation correcte de `arg.dateStr`
+    const url = `/dashboard/notes/create?start=${encodeURIComponent(start)}`;
+    console.log("Redirecting to:", url);
+    router.push(url);
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const start = selectInfo.startStr;
     const end = selectInfo.endStr;
-    router.push(
-      `/dashboard/notes/create?start=${encodeURIComponent(
-        start
-      )}&end=${encodeURIComponent(end)}`
-    );
-
-    return (
-      <div className="p-4">
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
-          initialView="dayGridMonth"
-          selectable={true}
-          selectMirror={true}
-          select={handleDateSelect}
-          dateClick={handleDateClick}
-          events={currentEvents}
-          editable={true}
-          dayMaxEvents={true}
-          locale="fr"
-        />
-      </div>
-    );
+    const url = `/dashboard/notes/create?start=${encodeURIComponent(
+      start
+    )}&end=${encodeURIComponent(end)}`;
+    console.log("Redirecting to:", url);
+    router.push(url);
   };
+
+  return (
+    <div className="p-4">
+      <FullCalendar
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        headerToolbar={{
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay",
+        }}
+        initialView="dayGridMonth"
+        selectable={true}
+        selectMirror={true}
+        select={handleDateSelect}
+        dateClick={handleDateClick}
+        events={currentEvents}
+        editable={true}
+        dayMaxEvents={true}
+        locale="fr"
+      />
+    </div>
+  );
 }
