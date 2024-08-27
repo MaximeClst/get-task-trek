@@ -1,5 +1,5 @@
 "use client";
-import { Cog, CreditCard, NotebookPen } from "lucide-react";
+import { Bot, Cog, CreditCard, NotebookPen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,7 +9,8 @@ export default function DashboardNav() {
   const menuDashboard = [
     { name: "Notes", icon: NotebookPen, path: "/dashboard/notes" },
     { name: "Settings", icon: Cog, path: "/dashboard/settings" },
-    { name: "Paiment", icon: CreditCard, path: "/dashboard/payment" },
+    { name: "Price", icon: CreditCard, path: "/dashboard/payment" },
+    { name: "AI Assistant", icon: Bot, path: "/dashboard/assistant" },
   ];
 
   return (
