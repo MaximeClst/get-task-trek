@@ -12,7 +12,7 @@ export default function AssistantPage() {
   React.useEffect(() => {
     if (status === "loading") return;
     if (!session) router.push("/auth/login");
-    // if (session && !session.user.isPremium) router.push("/dashboard/upgrade");
+    // if (session && !session.user.isPremium) router.push("/dashboard/payment");
   }, [session, status, router]);
 
   if (status === "loading") {
