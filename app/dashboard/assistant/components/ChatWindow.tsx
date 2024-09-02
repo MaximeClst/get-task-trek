@@ -22,7 +22,7 @@ export default function ChatWindow() {
     setInput("");
 
     try {
-      const response = await axios.post("/api/assistant/chat", {
+      const response = await axios.post("/api/dashboard/assistant/chat", {
         message: input,
       });
 

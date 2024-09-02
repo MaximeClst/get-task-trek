@@ -1,9 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "./actionsUsers";
 import { prisma } from "./db";
-import { revalidatePath } from "next/cache";
 
 export const getAllNotes = async (userId: string) => {
   const data = await prisma.notes.findMany({
@@ -17,14 +17,17 @@ export const getAllNotes = async (userId: string) => {
   return data;
 };
 
-export const createNote = async (formData: FormData) => {
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const completed = formData.get("completed");
+export const createNote = async ({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) => {
   const user = await getUser();
   const userId = user?.id as string;
 
-  //Vérifier la limite de 10 notes
+  // Vérifier la limite de 10 notes
   const userNotesCount = await prisma.notes.count({
     where: { userId: userId },
   });
@@ -40,7 +43,6 @@ export const createNote = async (formData: FormData) => {
       userId: userId,
       title: title,
       description: description,
-      completed: completed === "on",
     },
   });
   redirect("/dashboard/notes");
@@ -65,15 +67,15 @@ export const updateNote = async (formData: FormData) => {
   try {
     const id = formData.get("id") as string;
     const title = formData.get("title") as string;
-    const descrption = formData.get("descrption") as string;
+    const description = formData.get("description") as string;
     const completed = formData.get("completed");
 
-    if (title !== null || descrption !== null) {
+    if (title !== null || description !== null) {
       await prisma.notes.update({
         where: { id },
         data: {
           title: title,
-          description: descrption,
+          description: description,
           completed: completed === "on",
         },
       });
@@ -84,3 +86,24 @@ export const updateNote = async (formData: FormData) => {
     redirect("/");
   }
 };
+
+export async function addNoteToCalendar({
+  title,
+  description,
+  time,
+}: {
+  title: string;
+  description: string;
+  time: string;
+}) {
+  const user = await getUser();
+  const userId = user?.id as string;
+
+  await prisma.notes.create({
+    data: {
+      userId: userId,
+      title: title,
+      description: `${description} - Planifié pour ${time}`,
+    },
+  });
+}
