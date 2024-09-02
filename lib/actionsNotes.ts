@@ -17,13 +17,12 @@ export const getAllNotes = async (userId: string) => {
   return data;
 };
 
-export const createNote = async ({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) => {
+export const createNote = async (formData: FormData) => {
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const start = formData.get("start") as string;
+  const end = formData.get("end") as string;
+
   const user = await getUser();
   const userId = user?.id as string;
 
@@ -43,6 +42,8 @@ export const createNote = async ({
       userId: userId,
       title: title,
       description: description,
+      start: new Date(start),
+      end: new Date(end),
     },
   });
   redirect("/dashboard/notes");
