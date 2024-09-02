@@ -1,10 +1,9 @@
 "use server";
 
-import { prisma } from "./db";
-import { getStripeSession } from "./stripe";
-import { stripe } from "./stripe";
 import { redirect } from "next/navigation";
 import { getUser } from "./actionsUsers";
+import { prisma } from "./db";
+import { getStripeSession, stripe } from "./stripe";
 
 export const getDataStripeUser = async (userId: string) => {
   const data = await prisma.subscription.findUnique({
@@ -35,7 +34,7 @@ export const createSubscription = async () => {
   });
   const subscriptionUrl = await getStripeSession({
     customerId: dbUser?.stripeCustomerId as string,
-    domainUrl: "http://localhost:3000",
+    domainUrl: "https://get-task-trek.vercel.app/",
     priceId: process.env.STRIPE_API_ID as string,
   });
   return redirect(subscriptionUrl);
@@ -45,7 +44,7 @@ export const createCustomerPortal = async () => {
   const user = await getUser();
   const session = await stripe.billingPortal.sessions.create({
     customer: user?.stripeCustomerId as string,
-    return_url: "http://localhost:3000/dashboard/payment",
+    return_url: "https://get-task-trek.vercel.app/dashboard/payment",
   });
   return redirect(session.url);
 };
