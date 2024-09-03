@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getUser } from "./actionsUsers";
 import { prisma } from "./db";
-import { getStripeSession, stripe } from "./stripe";
+import { stripe } from "./stripe";
 
 export const getDataStripeUser = async (userId: string) => {
   try {
@@ -56,9 +56,15 @@ export const createSubscription = async () => {
 
     const subscriptionUrl = await getStripeSession({
       customerId: dbUser.stripeCustomerId,
-      domainUrl: process.env.NEXT_PUBLIC_DOMAIN_URL as string, // Utilisez une variable d'environnement pour le domaine
+      domainUrl:
+        process.env.NEXT_PUBLIC_DOMAIN_URL ||
+        "https://get-task-trek.vercel.app",
       priceId: process.env.STRIPE_API_ID as string,
     });
+
+    if (!subscriptionUrl) {
+      throw new Error("Failed to create subscription URL");
+    }
 
     return redirect(subscriptionUrl);
   } catch (error) {
@@ -71,18 +77,53 @@ export const createCustomerPortal = async () => {
   try {
     const user = await getUser();
 
-    if (!user?.stripeCustomerId) {
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { stripeCustomerId: true },
+    });
+
+    if (!dbUser?.stripeCustomerId) {
       throw new Error("User does not have a stripeCustomerId");
     }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId as string,
-      return_url: process.env.NEXT_PUBLIC_DOMAIN_URL + "/dashboard/payment", // Utilisez une variable d'environnement pour le domaine
+      customer: dbUser.stripeCustomerId,
+      return_url: process.env.NEXT_PUBLIC_DOMAIN_URL + "/dashboard/payment",
     });
 
     return redirect(session.url);
   } catch (error) {
     console.error("Error creating customer portal:", error);
+    throw error;
+  }
+};
+
+const getStripeSession = async ({
+  priceId,
+  domainUrl,
+  customerId,
+}: {
+  priceId: string;
+  domainUrl: string;
+  customerId: string;
+}) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      customer: customerId,
+      success_url: `${domainUrl}/dashboard/payment/success`,
+      cancel_url: `${domainUrl}/dashboard/payment/cancel`,
+    });
+
+    return session.url;
+  } catch (error) {
+    console.error("Erreur lors de la création de la session Stripe :", error);
     throw error;
   }
 };
