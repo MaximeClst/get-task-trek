@@ -54,16 +54,24 @@ export const createSubscription = async () => {
       throw new Error("User does not have a stripeCustomerId");
     }
 
+    const priceId = process.env.STRIPE_API_ID as string;
+
+    // Vérification du statut du `priceId`
+    const price = await stripe.prices.retrieve(priceId);
+    if (!price.active) {
+      throw new Error(`The price specified (${priceId}) is inactive.`);
+    }
+
     const subscriptionUrl = await getStripeSession({
       customerId: dbUser.stripeCustomerId,
       domainUrl:
         process.env.NEXT_PUBLIC_DOMAIN_URL ||
         "https://get-task-trek.vercel.app",
-      priceId: process.env.STRIPE_API_ID as string,
+      priceId: priceId,
     });
 
     if (!subscriptionUrl) {
-      throw new Error("Failed to create subscription URL");
+      throw new Error("Failed to create subscription session.");
     }
 
     return redirect(subscriptionUrl);
@@ -77,21 +85,12 @@ export const createCustomerPortal = async () => {
   try {
     const user = await getUser();
 
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { stripeCustomerId: true },
-    });
-
-    if (!dbUser?.stripeCustomerId) {
+    if (!user?.stripeCustomerId) {
       throw new Error("User does not have a stripeCustomerId");
     }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: dbUser.stripeCustomerId,
+      customer: user.stripeCustomerId as string,
       return_url: process.env.NEXT_PUBLIC_DOMAIN_URL + "/dashboard/payment",
     });
 
