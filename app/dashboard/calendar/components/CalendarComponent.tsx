@@ -17,7 +17,7 @@ export default function CalendarComponent() {
     // Fetch events from API
     const fetchEvents = async () => {
       try {
-        const response = await axios.get("/api/calendar/events");
+        const response = await axios.get("/api/events");
         setCurrentEvents(response.data.events);
       } catch (error) {
         console.error("Error fetching events:", error);
@@ -58,7 +58,7 @@ export default function CalendarComponent() {
         selectMirror={true}
         select={handleDateSelect}
         dateClick={handleDateClick}
-        events={currentEvents}
+        events={currentEvents} // Les événements sont récupérés ici
         editable={true}
         dayMaxEvents={true}
         locale="fr"

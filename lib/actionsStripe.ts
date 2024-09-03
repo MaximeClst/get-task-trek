@@ -58,7 +58,7 @@ export const createSubscription = async () => {
 
     const subscriptionUrl = await getStripeSession({
       customerId: dbUser?.stripeCustomerId as string,
-      domainUrl: "https://get-task-trek.vercel.app/",
+      domainUrl: "https://get-task-trek.vercel.app",
       priceId: process.env.STRIPE_API_ID as string,
     });
 

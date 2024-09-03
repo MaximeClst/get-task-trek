@@ -17,12 +17,17 @@ export const getAllNotes = async (userId: string) => {
   return data;
 };
 
-export const createNote = async (formData: FormData) => {
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const start = formData.get("start") as string;
-  const end = formData.get("end") as string;
-
+export const createNote = async ({
+  title,
+  description,
+  start,
+  end,
+}: {
+  title: string;
+  description: string;
+  start: string;
+  end: string;
+}) => {
   const user = await getUser();
   const userId = user?.id as string;
 
@@ -58,7 +63,7 @@ export const deleteNote = async (formData: FormData) => {
 };
 
 export const getNote = async (id: string) => {
-  const note = prisma.notes.findUnique({
+  const note = await prisma.notes.findUnique({
     where: { id: id },
   });
   return note;
