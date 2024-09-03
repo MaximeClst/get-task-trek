@@ -21,11 +21,9 @@ export const getDataStripeUser = async (userId: string) => {
       },
     });
 
-    // Handle case where data is not found
     if (!data) {
-      const errorMessage = `No subscription data found for userId: ${userId}`;
-      console.warn(errorMessage);
-      return null; // Or some default value indicating no subscription.
+      console.warn(`No subscription data found for userId: ${userId}`);
+      return null;
     }
 
     return data;
@@ -45,7 +43,7 @@ export const createSubscription = async () => {
 
     const dbUser = await prisma.user.findUnique({
       where: {
-        id: user?.id,
+        id: user.id,
       },
       select: {
         stripeCustomerId: true,
@@ -57,8 +55,8 @@ export const createSubscription = async () => {
     }
 
     const subscriptionUrl = await getStripeSession({
-      customerId: dbUser?.stripeCustomerId as string,
-      domainUrl: "https://get-task-trek.vercel.app",
+      customerId: dbUser.stripeCustomerId,
+      domainUrl: process.env.NEXT_PUBLIC_DOMAIN_URL as string, // Utilisez une variable d'environnement pour le domaine
       priceId: process.env.STRIPE_API_ID as string,
     });
 
@@ -79,7 +77,7 @@ export const createCustomerPortal = async () => {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId as string,
-      return_url: "https://get-task-trek.vercel.app/dashboard/payment",
+      return_url: process.env.NEXT_PUBLIC_DOMAIN_URL + "/dashboard/payment", // Utilisez une variable d'environnement pour le domaine
     });
 
     return redirect(session.url);

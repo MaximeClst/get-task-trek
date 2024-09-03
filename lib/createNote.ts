@@ -36,7 +36,7 @@ export default async function handler(
     return res.status(404).json({ error: "User not found" });
   }
 
-  // Vérifier si l'user est Premium ou si il a atteint 100 notes
+  // Vérifier si l'user est Premium ou si il a atteint 10 notes
   if (!user.isPremium && user._count.notes >= 10) {
     return res.status(403).json({
       error:

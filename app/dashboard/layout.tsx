@@ -1,10 +1,10 @@
 import { getUser } from "@/lib/actionsUsers";
+import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ButtonSignOut from "../components/ButtonSignOut";
 import DashboardNav from "../components/DashboardNav";
-import { prisma } from "@/lib/db";
 
 export default async function DashboardLayout({
   children,
@@ -16,18 +16,23 @@ export default async function DashboardLayout({
   }
 
   if (!user?.stripeCustomerId) {
-    const stripeCustomer = await stripe.customers.create({
-      email: user?.email as string,
-    });
+    try {
+      const stripeCustomer = await stripe.customers.create({
+        email: user?.email as string,
+      });
 
-    await prisma.user.update({
-      where: {
-        id: user?.id as string,
-      },
-      data: {
-        stripeCustomerId: stripeCustomer.id as string,
-      },
-    });
+      await prisma.user.update({
+        where: {
+          id: user?.id as string,
+        },
+        data: {
+          stripeCustomerId: stripeCustomer.id as string,
+        },
+      });
+    } catch (error) {
+      console.error("Erreur lors de la création du customer stripe :", error);
+      return <div>Erreur lors de la création du customer stripe</div>;
+    }
   }
 
   return (

@@ -11,7 +11,11 @@ import Link from "next/link";
 export default async function PagePayment() {
   const user = await getUser();
 
-  const dataStripe = await getDataStripeUser(user?.id as string);
+  if (!user) {
+    return <div>Veuillez vous connecter pour accéder à cette page.</div>;
+  }
+
+  const dataStripe = await getDataStripeUser(user.id);
 
   const itemsBasic = [{ name: "Get 10 notes" }, { name: "Edit your notes " }];
   const itemsPremium = [

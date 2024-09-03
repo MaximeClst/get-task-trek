@@ -19,21 +19,18 @@ export async function POST(req: Request): Promise<Response> {
     return new Response("Invalid Stripe webhook signature", { status: 400 });
   }
 
-  // Safely parse the event
-  const session = event.data.object as Stripe.Checkout.Session;
-  const subscriptionId = session.subscription as string;
-
   try {
     switch (event.type) {
       case "checkout.session.completed":
         await handleCheckoutSessionCompleted(
-          subscriptionId,
-          String(session.customer)
+          event.data.object as Stripe.Checkout.Session
         );
         break;
 
       case "invoice.payment_succeeded":
-        await handleInvoicePaymentSucceeded(subscriptionId);
+        await handleInvoicePaymentSucceeded(
+          event.data.object as Stripe.Invoice
+        );
         break;
 
       default:
@@ -48,18 +45,16 @@ export async function POST(req: Request): Promise<Response> {
 }
 
 async function handleCheckoutSessionCompleted(
-  subscriptionId: string,
-  customerId: string
+  session: Stripe.Checkout.Session
 ): Promise<void> {
+  const subscriptionId = session.subscription as string;
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const user = await prisma.user.findUnique({
-    where: {
-      stripeCustomerId: customerId,
-    },
+    where: { stripeCustomerId: session.customer as string },
   });
 
   if (!user) {
-    throw new Error("User not found for customerId: " + customerId);
+    throw new Error("User not found for customerId: " + session.customer);
   }
 
   await prisma.subscription.create({
@@ -76,14 +71,13 @@ async function handleCheckoutSessionCompleted(
 }
 
 async function handleInvoicePaymentSucceeded(
-  subscriptionId: string
+  invoice: Stripe.Invoice
 ): Promise<void> {
+  const subscriptionId = invoice.subscription as string;
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
   await prisma.subscription.update({
-    where: {
-      stripeSubscriptionId: subscription.id,
-    },
+    where: { stripeSubscriptionId: subscription.id },
     data: {
       planId: subscription.items.data[0].plan.id,
       currentPeriodStart: subscription.current_period_start,

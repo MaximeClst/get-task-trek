@@ -7,15 +7,26 @@ import { authOptions } from "./AuthOptions";
 import { prisma } from "./db";
 
 export const getUser = async () => {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user || !session.user.id) {
-    redirect("../");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) {
+      throw new Error("User not authenticated");
+    }
+
+    const id = session.user.id as string;
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
+  } catch (error) {
+    console.error("Error retrieving user:", error);
+    redirect("/login"); // Redirect to login page if there's an error
   }
-  const id = session.user.id as string;
-  const user = await prisma.user.findUnique({
-    where: { id },
-  });
-  return user;
 };
 
 export const updateUser = async (formData: FormData) => {
@@ -23,39 +34,51 @@ export const updateUser = async (formData: FormData) => {
     const userName = formData.get("name") as string;
     const id = formData.get("id") as string;
 
-    if (userName !== null) {
-      await prisma.user.update({
-        where: { id },
-        data: { name: userName },
-      });
+    if (!userName || !id) {
+      throw new Error("Missing required parameters");
     }
+
+    await prisma.user.update({
+      where: { id },
+      data: { name: userName },
+    });
+
+    revalidatePath("/profile");
   } catch (error) {
-    console.error(
-      "Une erreur est survenue lors de la modification de l'utilisateur"
-    );
-  } finally {
-    revalidatePath("/");
+    console.error("Error updating user:", error);
+    throw error; // Ensure error is propagated
   }
 };
 
 export const deleteUser = async () => {
-  const session = await getServerSession(authOptions);
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) {
+      throw new Error("User not authenticated");
+    }
 
-  const userId = session?.user.id as string;
+    const userId = session.user.id as string;
 
-  if (!session || !session.user || !session.user.id) {
-    redirect("../");
+    // Delete related data in a specific order
+    await prisma.subscription.deleteMany({
+      where: { userId },
+    });
+
+    await prisma.session.deleteMany({
+      where: { userId },
+    });
+
+    await prisma.account.deleteMany({
+      where: { userId },
+    });
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    revalidatePath("/");
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
   }
-  await prisma.user.deleteMany({
-    where: { stripeCustomerId: userId },
-  });
-  await prisma.subscription.deleteMany({
-    where: { userId: userId },
-  });
-  await prisma.session.deleteMany({
-    where: { userId: userId },
-  });
-  await prisma.account.deleteMany({
-    where: { userId: userId },
-  });
 };
