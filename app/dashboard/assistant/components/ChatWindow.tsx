@@ -3,7 +3,7 @@
 import { useChat } from "ai/react";
 import axios from "axios";
 import { format, parse } from "date-fns";
-import { fr } from "date-fns/locale"; // Importation de la localisation française
+import { fr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -25,12 +25,11 @@ export default function ChatWindow() {
   }, [customMessages]);
 
   const parseDate = (input: string) => {
-    const parsedDate = parse(input, "EEEE 'à' HH'h'", new Date(), {
+    const parsedDate = parse(input, "EEEE dd MMMM 'à' HH'h'", new Date(), {
       locale: fr,
     });
     if (isNaN(parsedDate.getTime())) {
-      // Si la date est invalide, renvoie une valeur par défaut
-      return new Date();
+      return null;
     }
     return parsedDate;
   };
@@ -38,7 +37,6 @@ export default function ChatWindow() {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    await handleSubmit(e); // Envoie le message à l'IA
 
     const userMessage: Message = { role: "user", content: input };
     setCustomMessages((prev) => [...prev, userMessage]);
@@ -46,21 +44,24 @@ export default function ChatWindow() {
     setError(null);
 
     try {
-      const titleMatch = input.match(
-        /(.*?)(\s+(à|le|vendredi|lundi|mardi|mercredi|jeudi|samedi|dimanche))/i
-      );
+      const titleMatch = input.match(/RDV\s+(.*?)(\s+le\s+|\s+)/i);
       const title = titleMatch ? titleMatch[1].trim() : "Note sans titre";
+
       const dateMatch = input.match(
-        /(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s?(\d{1,2}h\d{0,2})?/i
+        /(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+à\s+(\d{1,2})h/i
       );
-      const dateString = dateMatch ? dateMatch[0] : "Maintenant";
-      const start = parseDate(dateString);
-      const end = new Date(start.getTime() + 60 * 60 * 1000); // Par exemple, 1 heure après le début
+      const dateString = dateMatch
+        ? `${dateMatch[1]} ${dateMatch[2]} ${dateMatch[3]} à ${dateMatch[4]}`
+        : null;
+      const start = dateString ? parseDate(dateString) : new Date();
+      const end = new Date(
+        (start ? start.getTime() : new Date().getTime()) + 60 * 60 * 1000
+      );
 
       const response = await axios.post("/api/create-note", {
         title,
         description: input,
-        start: start.toISOString(),
+        start: start ? start.toISOString() : new Date().toISOString(),
         end: end.toISOString(),
       });
 
@@ -68,13 +69,11 @@ export default function ChatWindow() {
 
       const assistantMessage: Message = {
         role: "assistant",
-        content:
-          response.data.message ||
-          `Très bien ${userName}, je vous ai créé la note "${title}" pour ${format(
-            start,
-            "EEEE à HH'h'",
-            { locale: fr }
-          )}`,
+        content: `Très bien ${userName}, je vous ai créé la note "${title}" pour ${format(
+          start as Date,
+          "EEEE dd MMMM à HH'h'",
+          { locale: fr }
+        )}.`,
       };
 
       setCustomMessages((prev) => [...prev, assistantMessage]);
@@ -94,8 +93,8 @@ export default function ChatWindow() {
     <div className="flex flex-col justify-center w-full h-full p-4">
       <div className="flex-1 overflow-auto">
         <h2 className="text-center text-lg font-bold mb-4">
-          Bonjour je suis{" "}
-          <span className="italic text-muted-foreground">Titask</span>🤖ton
+          Bonjour, je suis{" "}
+          <span className="italic text-muted-foreground">Titask</span> 🤖, ton
           assistant numérique pour créer tes notes !
         </h2>
         {customMessages.map((msg, index) => (
@@ -130,7 +129,7 @@ export default function ChatWindow() {
         />
         <button
           onClick={sendMessage}
-          className="ml-2 px-4 py-2 bg-gray-700 text-white rounded "
+          className="ml-2 px-4 py-2 bg-gray-700 text-white rounded"
           disabled={loading}
         >
           Envoyer

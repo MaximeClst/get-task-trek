@@ -36,12 +36,14 @@ export default function CreatePage() {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description); // Correction de la clé "description"
-    formData.append("start", start);
-    formData.append("end", end);
+    const data = {
+      title: title,
+      description: description,
+      start: start,
+      end: end,
+    };
 
-    await createNote(formData);
+    await createNote(data);
   };
 
   return (
