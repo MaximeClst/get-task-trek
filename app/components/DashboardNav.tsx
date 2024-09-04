@@ -1,5 +1,5 @@
 "use client";
-import { Cog, CreditCard, NotebookPen, Bot, CalendarDays } from "lucide-react";
+import { Bot, CalendarDays, Cog, CreditCard, NotebookPen } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,20 +13,19 @@ export default function DashboardNav() {
     { name: "Settings", icon: Cog, path: "/dashboard/settings" },
     { name: "Price", icon: CreditCard, path: "/dashboard/payment" },
   ];
-
   if (session?.user?.isPremium) {
-    menuDashboard.push({
-      name: "AI Assistant",
-      icon: Bot,
-      path: "/dashboard/assistant",
-    });
-  }
-  if (session?.user?.isPremium) {
-    menuDashboard.push({
-      name: "Calendar",
-      icon: CalendarDays,
-      path: "/dashboard/calendar",
-    });
+    menuDashboard.push(
+      {
+        name: "AI Assistant",
+        icon: Bot,
+        path: "/dashboard/assistant",
+      },
+      {
+        name: "Calendar",
+        icon: CalendarDays,
+        path: "/dashboard/calendar",
+      }
+    );
   }
 
   return (
