@@ -25,7 +25,7 @@ export const getUser = async () => {
     return user;
   } catch (error) {
     console.error("Error retrieving user:", error);
-    redirect("/login"); // Redirect to login page if there's an error
+    redirect("/api/auth/signin"); // Redirect to login page if there's an error
   }
 };
 

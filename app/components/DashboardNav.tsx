@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 export default function DashboardNav() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession(); // Ajout de l'extraction de 'status'
 
   // Gestion de la session pour vérifier si l'utilisateur est premium
   if (status === "loading") return <div>Chargement...</div>;
