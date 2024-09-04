@@ -1,4 +1,4 @@
-import { Button } from "@/app/src/components/ui/button";
+import { buttonVariants } from "@/app/src/components/ui/button";
 import { Card } from "@/app/src/components/ui/card";
 import { Ban } from "lucide-react";
 import Link from "next/link";
@@ -14,9 +14,20 @@ export default function CancelPage() {
         <p className="text-muted-foreground text-sm mb-2">
           Oups ! Il semble y avoir une erreur
         </p>
-        <Button className="w-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
-          <Link href="/dashboard/payment">Retour vers le dashboard</Link>
-        </Button>
+        <div className="flex gap-4 justify-center">
+          <Link
+            className={buttonVariants({ size: "sm", variant: "secondary" })}
+            href="/dashboard/payment"
+          >
+            Retour vers le dashboard
+          </Link>
+          <Link
+            className={buttonVariants({ size: "sm" })}
+            href="mailto:contact.maximecslt@gmail.com"
+          >
+            Contacter le support
+          </Link>
+        </div>
       </Card>
     </section>
   );

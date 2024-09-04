@@ -37,7 +37,11 @@ export default function DashboardNav() {
       })}
 
       {/* Ai Assistant et Calendar visibles uniquement si l'utilisateur est premium */}
-      <div className={`${session?.user?.isPremium ? "" : "hidden"}`}>
+      <div
+        className={`${
+          session?.user?.isPremium ? "" : "hidden"
+        } : flex md:flex-col md:h-full md:w-16 w-full lg:w-40 gap-2`}
+      >
         <Link href="/dashboard/assistant">
           <div
             className={`flex items-center justify-center lg:justify-start gap-2 cursor-pointer lg:p-3 p-2 hover:bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:bg-opacity-50 hover:text-white text-sm font-bold rounded-md ${
