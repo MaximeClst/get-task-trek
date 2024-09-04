@@ -19,13 +19,13 @@ export default function SuccessPage() {
             className={buttonVariants({ size: "sm", variant: "secondary" })}
             href="/dashboard/notes"
           >
-            Go to Note
+            Go créér une Note
           </Link>
           <Link
             className={buttonVariants({ size: "sm" })}
             href="/dashboard/assistant"
           >
-            Go to Ai Assistant
+            Go parler à Ai Assistant
           </Link>
         </div>
       </Card>

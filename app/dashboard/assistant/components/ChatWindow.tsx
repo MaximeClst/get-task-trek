@@ -2,8 +2,6 @@
 
 import { useChat } from "ai/react";
 import axios from "axios";
-import { format, parse } from "date-fns";
-import { fr } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -13,7 +11,17 @@ type Message = {
 };
 
 export default function ChatWindow() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  const { input, handleInputChange, handleSubmit } = useChat();
+  const [conversationStep, setConversationStep] = useState<number>(0);
+  const [noteDetails, setNoteDetails] = useState<{
+    title: string;
+    description: string;
+    date: string;
+  }>({
+    title: "",
+    description: "",
+    date: "",
+  });
   const [customMessages, setCustomMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,17 +32,7 @@ export default function ChatWindow() {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [customMessages]);
 
-  const parseDate = (input: string) => {
-    const parsedDate = parse(input, "EEEE dd MMMM 'à' HH'h'", new Date(), {
-      locale: fr,
-    });
-    if (isNaN(parsedDate.getTime())) {
-      return null;
-    }
-    return parsedDate;
-  };
-
-  const sendMessage = async (e: React.FormEvent) => {
+  const handleConversation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -43,40 +41,86 @@ export default function ChatWindow() {
     setLoading(true);
     setError(null);
 
+    let nextAssistantMessage = "";
+    let nextStep = conversationStep;
+
     try {
-      const titleMatch = input.match(/RDV\s+(.*?)(\s+le\s+|\s+)/i);
-      const title = titleMatch ? titleMatch[1].trim() : "Note sans titre";
+      switch (conversationStep) {
+        case 0: // Step 1: User wants to create a note
+          nextAssistantMessage =
+            "Très bien ! Quel est le titre de votre note ?";
+          nextStep = 1;
+          break;
 
-      const dateMatch = input.match(
-        /(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+à\s+(\d{1,2})h/i
-      );
-      const dateString = dateMatch
-        ? `${dateMatch[1]} ${dateMatch[2]} ${dateMatch[3]} à ${dateMatch[4]}`
-        : null;
-      const start = dateString ? parseDate(dateString) : new Date();
-      const end = new Date(
-        (start ? start.getTime() : new Date().getTime()) + 60 * 60 * 1000
-      );
+        case 1: // Step 2: Ask for the note's title
+          setNoteDetails((prev) => ({ ...prev, title: input.trim() }));
+          nextAssistantMessage =
+            "Parfait, quelle description souhaitez-vous ajouter ?";
+          nextStep = 2;
+          break;
 
-      const response = await axios.post("/api/create-note", {
-        title,
-        description: input,
-        start: start ? start.toISOString() : new Date().toISOString(),
-        end: end.toISOString(),
-      });
+        case 2: // Step 3: Ask for description
+          if (
+            [
+              "non",
+              "pas de description",
+              "aucune description",
+              "rien",
+            ].includes(input.trim().toLowerCase())
+          ) {
+            setNoteDetails((prev) => ({ ...prev, description: "" }));
+            nextAssistantMessage =
+              "Voulez-vous ajouter une date et une heure ?";
+          } else {
+            setNoteDetails((prev) => ({ ...prev, description: input.trim() }));
+            nextAssistantMessage =
+              "Voulez-vous ajouter une date et une heure ?";
+          }
+          nextStep = 3;
+          break;
 
-      const userName = session?.user?.name || "utilisateur";
+        case 3: // Step 4: Ask for date and time
+          if (
+            ["non", "pas de date ni d'heure", "rien"].includes(
+              input.trim().toLowerCase()
+            )
+          ) {
+            await createNote(noteDetails.title, noteDetails.description, "");
+            nextAssistantMessage = `Très bien ${session?.user?.name}, j'ai créé la note "${noteDetails.title}" sans date ni heure.`;
+          } else {
+            try {
+              setNoteDetails((prev) => ({ ...prev, date: input.trim() }));
+              await createNote(
+                noteDetails.title,
+                noteDetails.description,
+                input.trim()
+              );
+              nextAssistantMessage = `Très bien ${
+                session?.user?.name
+              }, j'ai créé la note "${
+                noteDetails.title
+              }" avec comme description "${
+                noteDetails.description || "sans description"
+              }" pour ${input.trim()}.`;
+            } catch (error) {
+              setError("Format de date invalide. Veuillez réessayer.");
+              nextAssistantMessage =
+                "Désolé, le format de la date est invalide.";
+            }
+          }
+          nextStep = 0; // Reset conversation
+          break;
+
+        default:
+          break;
+      }
 
       const assistantMessage: Message = {
         role: "assistant",
-        content: `Très bien ${userName}, je vous ai créé la note "${title}" pour ${format(
-          start as Date,
-          "EEEE dd MMMM à HH'h'",
-          { locale: fr }
-        )}.`,
+        content: nextAssistantMessage,
       };
-
       setCustomMessages((prev) => [...prev, assistantMessage]);
+      setConversationStep(nextStep);
     } catch (error) {
       console.error("Erreur lors de la création de la note :", error);
       setError("Désolé, une erreur est survenue.");
@@ -87,6 +131,67 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const hourRegex = /(\d{1,2})\s?(h|heures?)/i;
+  const dayOfWeekRegex =
+    /(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)/i;
+  const dayOfMonthRegex = /\b(0?[1-9]|[12][0-9]|3[01])\b/;
+
+  const parseDateTime = (input: string) => {
+    const dayOfWeekMatch = input.match(dayOfWeekRegex);
+    const dayOfMonthMatch = input.match(dayOfMonthRegex);
+    const hourMatch = input.match(hourRegex);
+
+    let parsedDate = new Date(); // Par défaut, utiliser la date actuelle
+
+    // Si un jour de la semaine est trouvé, on ajuste la date
+    if (dayOfWeekMatch) {
+      const dayOfWeek = dayOfWeekMatch[0].toLowerCase();
+      const daysToAdd =
+        {
+          lundi: 1,
+          mardi: 2,
+          mercredi: 3,
+          jeudi: 4,
+          vendredi: 5,
+          samedi: 6,
+          dimanche: 7,
+        }[dayOfWeek] || 0;
+      parsedDate.setDate(
+        parsedDate.getDate() + (daysToAdd - parsedDate.getDay())
+      );
+    }
+
+    // Si un jour du mois est trouvé, on l'ajoute à la date
+    if (dayOfMonthMatch) {
+      const dayOfMonth = parseInt(dayOfMonthMatch[0]);
+      parsedDate.setDate(dayOfMonth);
+    }
+
+    // Si une heure est trouvée, on l'ajoute à la date
+    if (hourMatch) {
+      const hour = parseInt(hourMatch[1]);
+      parsedDate.setHours(hour, 0, 0, 0); // On fixe les minutes et secondes à 0
+    }
+
+    return parsedDate;
+  };
+
+  const createNote = async (
+    title: string,
+    description: string,
+    date: string
+  ) => {
+    const start = date ? parseDateTime(date) : new Date();
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // Durée par défaut de 1 heure
+
+    await axios.post("/api/create-note", {
+      title,
+      description,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
   };
 
   return (
@@ -120,7 +225,7 @@ export default function ChatWindow() {
           onKeyPress={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              sendMessage(e);
+              handleConversation(e);
             }
           }}
           placeholder="Tapez votre message..."
@@ -128,7 +233,7 @@ export default function ChatWindow() {
           disabled={loading}
         />
         <button
-          onClick={sendMessage}
+          onClick={handleConversation}
           className="ml-2 px-4 py-2 bg-gray-700 text-white rounded"
           disabled={loading}
         >
