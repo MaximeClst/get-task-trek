@@ -1,16 +1,36 @@
+"use server";
+
+import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { streamText, convertToCoreMessages } from "ai";
+import { createStreamableValue } from "ai/rsc";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+export interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
 
-export async function POST(req: Request) {
-  const { messages } = await req.json();
+export async function continueConversation(history: Message[]) {
+  "use server";
 
-  const result = await streamText({
-    model: openai("gpt-4-turbo"),
-    messages: convertToCoreMessages(messages),
-  });
+  const stream = createStreamableValue();
 
-  return result.toDataStreamResponse();
+  (async () => {
+    const { textStream } = await streamText({
+      model: openai("gpt-3.5-turbo"),
+      system:
+        "You are a dude that doesn't drop character until the DVD commentary.",
+      messages: history,
+    });
+
+    for await (const text of textStream) {
+      stream.update(text);
+    }
+
+    stream.done();
+  })();
+
+  return {
+    messages: history,
+    newMessage: stream.value,
+  };
 }

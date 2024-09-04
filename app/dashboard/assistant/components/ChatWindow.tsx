@@ -95,13 +95,18 @@ export default function ChatWindow() {
                 noteDetails.description,
                 input.trim()
               );
+              await createEvent(
+                noteDetails.title,
+                noteDetails.description,
+                input.trim()
+              );
               nextAssistantMessage = `Très bien ${
                 session?.user?.name
               }, j'ai créé la note "${
                 noteDetails.title
               }" avec comme description "${
                 noteDetails.description || "sans description"
-              }" pour ${input.trim()}.`;
+              }" pour ${input.trim()}, et ajouté cet événement à votre calendrier.`;
             } catch (error) {
               setError("Format de date invalide. Veuillez réessayer.");
               nextAssistantMessage =
@@ -157,7 +162,7 @@ export default function ChatWindow() {
           vendredi: 5,
           samedi: 6,
           dimanche: 7,
-        }[dayOfWeek] || 0;
+        }[dayOfWeek] || 0; // Fixed by removing the array brackets around 0
       parsedDate.setDate(
         parsedDate.getDate() + (daysToAdd - parsedDate.getDay())
       );
@@ -191,6 +196,23 @@ export default function ChatWindow() {
       description,
       start: start.toISOString(),
       end: end.toISOString(),
+    });
+  };
+
+  const createEvent = async (
+    title: string,
+    description: string,
+    date: string
+  ) => {
+    const start = date ? parseDateTime(date) : new Date();
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // Durée par défaut de 1 heure
+
+    await axios.post("/api/events", {
+      title,
+      description,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      allDay: false,
     });
   };
 
