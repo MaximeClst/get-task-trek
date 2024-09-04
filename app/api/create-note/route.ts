@@ -1,5 +1,5 @@
-import { createNote } from "@/app/src/lib/actionsNotes";
-import { authOptions } from "@/app/src/lib/AuthOptions";
+import { createNote } from "@/lib/actionsNotes";
+import { authOptions } from "@/lib/AuthOptions";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 

@@ -1,6 +1,6 @@
-import { getUser } from "@/app/src/lib/actionsUsers";
-import { prisma } from "@/app/src/lib/db";
-import { stripe } from "@/app/src/lib/stripe";
+import { getUser } from "@/lib/actionsUsers";
+import { prisma } from "@/lib/db";
+import { stripe } from "@/lib/stripe";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ButtonSignOut from "../components/ButtonSignOut";
