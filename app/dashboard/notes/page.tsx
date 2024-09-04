@@ -1,8 +1,8 @@
 import ButtonDelete from "@/app/components/ButtonDelete";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { getAllNotes } from "@/lib/actionsNotes";
-import { getUser } from "@/lib/actionsUsers";
+import { Button } from "@/app/src/components/ui/button";
+import { Card } from "@/app/src/components/ui/card";
+import { getAllNotes } from "@/app/src/lib/actionsNotes";
+import { getUser } from "@/app/src/lib/actionsUsers";
 import { File } from "lucide-react";
 import Link from "next/link";
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/app/src/components/ui/button";
+import { Input } from "@/app/src/components/ui/input";
 import { deleteNote } from "@/lib/actionsNotes";
 import { Trash2 } from "lucide-react";
 import { toast } from "react-toastify";

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/src/components/ui/button";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import GithubIcon from "../src/icons/GithubIcon.svg";

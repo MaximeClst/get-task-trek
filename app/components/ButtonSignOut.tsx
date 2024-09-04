@@ -1,9 +1,9 @@
 "use client";
 
-import { signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { Button } from "@/app/src/components/ui/button";
 import { LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function ButtonSignOut() {
   const router = useRouter();

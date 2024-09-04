@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/src/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,11 +8,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { getNote, updateNote } from "@/lib/actionsNotes";
+} from "@/app/src/components/ui/card";
+import { Input } from "@/app/src/components/ui/input";
+import { Label } from "@/app/src/components/ui/label";
+import { Textarea } from "@/app/src/components/ui/textarea";
+import { getNote, updateNote } from "@/app/src/lib/actionsNotes";
 import Link from "next/link";
 
 interface Params {

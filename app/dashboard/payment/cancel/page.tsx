@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import Link from "next/link";
+import { Button } from "@/app/src/components/ui/button";
+import { Card } from "@/app/src/components/ui/card";
 import { Ban } from "lucide-react";
+import Link from "next/link";
 
 export default function CancelPage() {
   return (

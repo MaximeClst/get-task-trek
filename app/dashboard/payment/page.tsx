@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/app/src/components/ui/button";
+import { Card, CardContent } from "@/app/src/components/ui/card";
 import {
   createCustomerPortal,
   createSubscription,
   getDataStripeUser,
-} from "@/lib/actionsStripe";
-import { getUser } from "@/lib/actionsUsers";
+} from "@/app/src/lib/actionsStripe";
+import { getUser } from "@/app/src/lib/actionsUsers";
 import Link from "next/link";
 
 export default async function PagePayment() {

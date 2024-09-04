@@ -1,4 +1,4 @@
-import SessionWrapper from "@/lib/SessionWrapper";
+import SessionWrapper from "@/app/src/lib/SessionWrapper";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Nav from "./components/Nav";

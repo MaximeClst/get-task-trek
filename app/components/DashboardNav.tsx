@@ -8,22 +8,27 @@ export default function DashboardNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  // Gestion de la session pour vérifier si l'utilisateur est premium
+  if (status === "loading") return <div>Chargement...</div>;
+
   const menuDashboard = [
     { name: "Notes", icon: NotebookPen, path: "/dashboard/notes" },
     { name: "Settings", icon: Cog, path: "/dashboard/settings" },
     { name: "Price", icon: CreditCard, path: "/dashboard/payment" },
   ];
   if (session?.user?.isPremium) {
-    menuDashboard.push({
-      name: "AI Assistant",
-      icon: Bot,
-      path: "/dashboard/assistant",
-    });
-    menuDashboard.push({
-      name: "Calendar",
-      icon: CalendarDays,
-      path: "/dashboard/calendar",
-    });
+    menuDashboard.push(
+      {
+        name: "AI Assistant",
+        icon: Bot,
+        path: "/dashboard/assistant",
+      },
+      {
+        name: "Calendar",
+        icon: CalendarDays,
+        path: "/dashboard/calendar",
+      }
+    );
   }
 
   return (
