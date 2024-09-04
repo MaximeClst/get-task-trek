@@ -14,18 +14,16 @@ export default function DashboardNav() {
     { name: "Price", icon: CreditCard, path: "/dashboard/payment" },
   ];
   if (session?.user?.isPremium) {
-    menuDashboard.push(
-      {
-        name: "AI Assistant",
-        icon: Bot,
-        path: "/dashboard/assistant",
-      },
-      {
-        name: "Calendar",
-        icon: CalendarDays,
-        path: "/dashboard/calendar",
-      }
-    );
+    menuDashboard.push({
+      name: "AI Assistant",
+      icon: Bot,
+      path: "/dashboard/assistant",
+    });
+    menuDashboard.push({
+      name: "Calendar",
+      icon: CalendarDays,
+      path: "/dashboard/calendar",
+    });
   }
 
   return (
@@ -33,7 +31,7 @@ export default function DashboardNav() {
       {menuDashboard.map((link, index) => {
         const isActive = pathname.startsWith(link.path);
         return (
-          <Link href={link.path}>
+          <Link href={link.path} key={index}>
             <div
               className={`flex items-center justify-center lg:justify-start gap-2 cursor-pointer lg:p-3 p-2 hover:bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:bg-opacity-50 hover:text-white text-sm font-bold rounded-md ${
                 isActive &&
