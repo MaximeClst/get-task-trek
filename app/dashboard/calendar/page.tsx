@@ -11,7 +11,7 @@ export default function CalendarPage() {
 
   React.useEffect(() => {
     if (status === "loading") return; // Do nothing while loading
-    if (!session) router.push("/auth/login"); // Redirect if not authenticated
+    if (!session) router.push("/auth"); // Redirect if not authenticated
     if (session && !session.user.isPremium) router.push("/dashboard/payment"); // Redirect if not premium
   }, [session, status, router]);
 

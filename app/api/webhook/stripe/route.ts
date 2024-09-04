@@ -22,8 +22,10 @@ export async function POST(req: Request): Promise<Response> {
   try {
     switch (event.type) {
       case "checkout.session.completed":
+        const session = event.data.object as Stripe.Checkout.Session;
         await handleCheckoutSessionCompleted(
-          event.data.object as Stripe.Checkout.Session
+          session.subscription as string,
+          session.customer as string
         );
         break;
 
@@ -45,17 +47,23 @@ export async function POST(req: Request): Promise<Response> {
 }
 
 async function handleCheckoutSessionCompleted(
-  session: Stripe.Checkout.Session
+  subscriptionId: string,
+  customerId: string
 ): Promise<void> {
-  const subscriptionId = session.subscription as string;
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
   const user = await prisma.user.findUnique({
-    where: { stripeCustomerId: session.customer as string },
+    where: { stripeCustomerId: customerId },
   });
 
   if (!user) {
-    throw new Error("User not found for customerId: " + session.customer);
+    throw new Error("User not found for customerId: " + customerId);
   }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { isPremium: true },
+  });
 
   await prisma.subscription.create({
     data: {
