@@ -4,8 +4,8 @@ import {
   createCustomerPortal,
   createSubscription,
   getDataStripeUser,
-} from "@/app/src/lib/actionsStripe";
-import { getUser } from "@/app/src/lib/actionsUsers";
+} from "@/lib/actionsStripe";
+import { getUser } from "@/lib/actionsUsers";
 import Link from "next/link";
 
 export default async function PagePayment() {

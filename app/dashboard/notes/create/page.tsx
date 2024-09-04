@@ -12,7 +12,7 @@ import {
 import { Input } from "@/app/src/components/ui/input";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
-import { createNote } from "@/app/src/lib/actionsNotes";
+import { createNote } from "@/lib/actionsNotes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";

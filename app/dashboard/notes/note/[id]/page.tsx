@@ -12,7 +12,7 @@ import {
 import { Input } from "@/app/src/components/ui/input";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
-import { getNote, updateNote } from "@/app/src/lib/actionsNotes";
+import { getNote, updateNote } from "@/lib/actionsNotes";
 import Link from "next/link";
 
 interface Params {
