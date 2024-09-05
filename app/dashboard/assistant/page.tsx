@@ -1,6 +1,6 @@
 "use client";
 
-import ChatWindow from "./components/ChatWindow";
+import ChatWindow from "./ChatWindow";
 
 export default function Chat() {
   return (

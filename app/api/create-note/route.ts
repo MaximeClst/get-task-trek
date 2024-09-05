@@ -10,9 +10,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { title, description, start, end, allDay } = await req.json();
+  const { title, description, start, end, date } = await req.json();
 
-  if (!title || !description || !start || !end) {
+  if (!title || !description || !start || !end || !date) {
     return NextResponse.json(
       { error: "Paramètres manquants" },
       { status: 400 }
