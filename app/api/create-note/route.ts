@@ -10,9 +10,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { title, description, start, end, date } = await req.json();
+  const { title, description, date } = await req.json();
 
-  if (!title || !description || !start || !end || !date) {
+  if (!title || !description || !date) {
     return NextResponse.json(
       { error: "Paramètres manquants" },
       { status: 400 }
@@ -20,7 +20,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Appel à la fonction `createNote` avec un objet littéral
+    // Ici, on utilise 'date' pour le champ 'start' et 'end'
+    const start = new Date(date).toISOString();
+    const end = new Date(
+      new Date(date).getTime() + 60 * 60 * 1000
+    ).toISOString(); // Exemple : 1 heure plus tard
+
+    // Appel à la fonction `createNote`
     await createNote({
       title,
       description,

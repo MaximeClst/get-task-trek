@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React from "react";
-import CalendarComponent from "./components/CalendarComponent";
+import CalendarComponent from "./CalendarComponent";
 
 export default function CalendarPage() {
   const { data: session, status } = useSession();
