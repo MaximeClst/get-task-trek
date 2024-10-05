@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
+  // Vérification de l'authentification
   if (!session) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
@@ -28,6 +29,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
+  // Vérification de l'authentification
   if (!session) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
@@ -43,12 +45,28 @@ export async function POST(req: Request) {
       );
     }
 
+    // Vérification du format des dates
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return NextResponse.json(
+        { error: "Format de date invalide" },
+        { status: 400 }
+      );
+    }
+
+    // Gestion des événements en mode toute la journée
+    if (allDay) {
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
     const event = await prisma.event.create({
       data: {
         title,
         description,
-        start: new Date(start),
-        end: new Date(end),
+        start: startDate,
+        end: endDate,
         allDay: allDay || false,
         userId: session.user.id,
       },

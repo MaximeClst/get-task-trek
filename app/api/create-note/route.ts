@@ -6,12 +6,14 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
+  // Vérification de la session
   if (!session) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const { title, description, date } = await req.json();
 
+  // Vérification des paramètres requis
   if (!title || !description || !date) {
     return NextResponse.json(
       { error: "Paramètres manquants" },
@@ -20,17 +22,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Ici, on utilise 'date' pour le champ 'start' et 'end'
+    // Conversion de la date
     const start = new Date(date).toISOString();
     const end = new Date(
       new Date(date).getTime() + 60 * 60 * 1000
-    ).toISOString(); // Exemple : 1 heure plus tard
+    ).toISOString(); // 1 heure plus tard
 
-    // Appel à la fonction `createNote`
+    // Création de la note
     await createNote({
       title,
       description,
-      start,
+      start, // Peut être renommé en date
       end,
     });
 

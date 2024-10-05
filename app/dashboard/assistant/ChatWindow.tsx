@@ -4,7 +4,6 @@ import { useChat } from "ai/react";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import {
-  checkMissingDetails,
   extractDetails,
   handleCalendarRequest,
   handleNoteRequest,
@@ -15,6 +14,14 @@ type Message = {
   content: string;
 };
 
+let conversationState = {
+  title: "",
+  description: "",
+  date: "",
+  time: "",
+  recurrence: false,
+};
+
 export default function ChatWindow() {
   const { input, handleInputChange } = useChat();
   const [customMessages, setCustomMessages] = useState<Message[]>([]);
@@ -23,79 +30,101 @@ export default function ChatWindow() {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
   const { data: session } = useSession();
 
-  const userName = session?.user?.name || "utilisateur";
+  const userName = session?.user?.name || "utilisateur"; // Utilisateur par défaut
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [customMessages]);
 
+  // Gestion principale de la conversation avec l'utilisateur
   const handleConversation = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const { title, date, time, recurrence } = extractDetails(input);
+      const userResponse = input.trim(); // Réponse utilisateur
 
-      const missingMessage = checkMissingDetails({
-        title,
-        date,
-        time,
-        recurrence,
-      });
-
-      if (missingMessage) {
+      if (!conversationState.title) {
+        // Si le titre n'est pas encore défini, demande-le
+        conversationState.title = userResponse;
         setCustomMessages((prev) => [
           ...prev,
           {
             role: "assistant",
-            content: missingMessage,
+            content: "Voulez-vous ajouter une description ?",
           },
         ]);
         return;
       }
 
-      if (!title || !date) {
+      if (!conversationState.description) {
+        // Si la description n'est pas encore définie
+        if (userResponse.toLowerCase() === "non") {
+          conversationState.description = ""; // Pas de description
+        } else {
+          conversationState.description = userResponse;
+        }
+        setCustomMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Quelle est la date et l'heure ?" },
+        ]);
+        return;
+      }
+
+      // Si la date et l'heure ne sont pas encore définies
+      if (!conversationState.date || !conversationState.time) {
+        const { date, time } = extractDetails(userResponse); // Extraire date et heure
+        if (date && time) {
+          conversationState.date = date;
+          conversationState.time = time;
+          setCustomMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "Voulez-vous ajouter une récurrence ?",
+            },
+          ]);
+          return;
+        }
         setCustomMessages((prev) => [
           ...prev,
           {
             role: "assistant",
-            content: "Il manque des informations pour créer la note.",
+            content:
+              "Je n'ai pas compris la date et l'heure. Veuillez réessayer.",
           },
         ]);
         return;
       }
 
-      const noteResponse = await handleNoteRequest(
-        {
-          title,
-          description: "Description générée par l'IA.",
-          date,
-          time: time ?? "",
-        },
-        session
-      );
+      // Si la récurrence n'est pas encore définie
+      if (!conversationState.recurrence) {
+        if (userResponse.toLowerCase() === "non") {
+          conversationState.recurrence = false;
+        } else {
+          conversationState.recurrence = true;
+        }
 
-      setCustomMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: `Très bien ${userName}, j'ai créé la note "${noteResponse.message}".`,
-        },
-      ]);
-
-      if (date || recurrence) {
-        const calendarResponse = await handleCalendarRequest({
-          title,
-          description: "Description générée par l'IA.",
-          date,
-          time: time ?? "",
-          recurrence,
-        });
+        // Créer la note et l'événement calendrier
+        const response = await createNoteAndCalendarEvent(
+          conversationState,
+          session
+        );
         setCustomMessages((prev) => [
           ...prev,
-          { role: "assistant", content: calendarResponse },
+          { role: "assistant", content: response },
         ]);
+
+        // Réinitialiser la conversation après la création
+        conversationState = {
+          title: "",
+          description: "",
+          date: "",
+          time: "",
+          recurrence: false,
+        };
+        return;
       }
     } catch (error) {
       setError("Désolé, une erreur est survenue.");
@@ -109,6 +138,35 @@ export default function ChatWindow() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonction pour créer la note et l'événement dans le calendrier
+  const createNoteAndCalendarEvent = async (
+    state: typeof conversationState,
+    session: any
+  ) => {
+    await handleNoteRequest(
+      {
+        title: state.title,
+        description: state.description,
+        date: state.date,
+        time: state.time,
+      },
+      session
+    );
+
+    await handleCalendarRequest(
+      {
+        title: state.title,
+        description: state.description,
+        date: state.date,
+        time: state.time,
+        recurrence: state.recurrence ? "recurring" : "non-recurring",
+      },
+      session
+    );
+
+    return `Très bien ${session?.user?.name}, j'ai créé la note "${state.title}" pour le ${state.date} à ${state.time}.`;
   };
 
   return (

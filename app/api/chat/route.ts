@@ -1,54 +1,74 @@
-"use server";
+import axios from "axios";
 
-import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
-import { createStreamableValue } from "ai/rsc";
-import { NextResponse } from "next/server";
-
-// Interface pour les messages de l'utilisateur et de l'assistant
-export interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
-
-// Fonction pour continuer la conversation
-export async function continueConversation(history: Message[]) {
-  const stream = createStreamableValue();
-
-  (async () => {
-    const { textStream } = await streamText({
-      model: openai("gpt-3.5-turbo"),
-      system:
-        "You are a dude that doesn't drop character until the DVD commentary.",
-      messages: history,
-    });
-
-    for await (const text of textStream) {
-      stream.update(text);
-    }
-
-    stream.done();
-  })();
-
-  return {
-    messages: history,
-    newMessage: stream.value,
-  };
-}
-
-// Gestionnaire POST pour traiter la conversation
-export async function POST(req: Request) {
+// Fonction pour gérer les requêtes liées au calendrier
+export const handleCalendarRequest = async (input: string, session: any) => {
   try {
-    // Récupérer les données envoyées par le client
-    const body = await req.json();
+    // Extraire les détails du message de l'utilisateur
+    const { title, date, time, recurrence } = extractCalendarDetails(input);
 
-    // Appeler la fonction continueConversation
-    const result = await continueConversation(body.history);
+    if (title && date && time) {
+      const fullDate = `${date} ${time}`; // Concatène la date et l'heure
+      await createCalendarEvent({
+        title,
+        start: fullDate,
+        end: calculateEndTime(fullDate, recurrence), // Calculer l'heure de fin
+        recurrence, // Ajouter la récurrence si elle est spécifiée
+      });
 
-    // Retourner le résultat en tant que réponse JSON
-    return NextResponse.json(result);
+      return {
+        message: `Événement "${title}" ajouté à votre calendrier pour le ${fullDate}, ${session?.user?.name}.`,
+      };
+    } else {
+      return {
+        message:
+          "Il manque des informations pour ajouter l'événement au calendrier (titre, date ou heure).",
+      };
+    }
   } catch (error) {
-    console.error("Erreur lors de la création de la conversation:", error);
-    return NextResponse.json({ error: "Erreur interne." }, { status: 500 });
+    console.error("Erreur lors de la création de l'événement : ", error);
+    return {
+      message:
+        "Une erreur est survenue lors de l'ajout de l'événement au calendrier.",
+    };
   }
-}
+};
+
+// Fonction utilitaire pour extraire les détails de l'événement
+const extractCalendarDetails = (input: string) => {
+  const title = input.match(/titre:\s*(.*)/i)?.[1];
+  const date = input.match(/date:\s*(.*)/i)?.[1];
+  const time = input.match(/heure:\s*(.*)/i)?.[1];
+  const recurrence = input.match(/récurrence:\s*(.*)/i)?.[1];
+
+  return { title, date, time, recurrence };
+};
+
+// Fonction pour créer un événement de calendrier
+const createCalendarEvent = async (eventDetails: {
+  title: string;
+  start: string;
+  end: string;
+  recurrence?: string;
+}) => {
+  try {
+    await axios.post("/api/create-event", eventDetails);
+  } catch (error) {
+    throw new Error(
+      "Erreur lors de l'envoi de la requête à l'API de calendrier."
+    );
+  }
+};
+
+// Fonction pour calculer l'heure de fin de l'événement
+const calculateEndTime = (start: string, recurrence?: string) => {
+  const startDate = new Date(start);
+  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Par défaut, durée de l'événement = 1 heure
+
+  // Si une récurrence est spécifiée, ajuster la date de fin
+  if (recurrence) {
+    // Logique pour gérer la récurrence (par exemple, tous les mardis)
+    // Exemple : ajuster la fin pour une récurrence hebdomadaire
+  }
+
+  return endDate.toISOString();
+};
