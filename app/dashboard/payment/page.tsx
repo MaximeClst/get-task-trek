@@ -122,53 +122,7 @@ export default async function PagePayment() {
                   </li>
                 ))}
               </ul>
-              <form
-                action={createSubscription.bind(null, "monthly")}
-                className="w-full mt-4"
-              >
-                <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
-                  Grab it
-                </Button>
-              </form>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          style={{
-            width: 300,
-          }}
-          className="h-fit flex-1 border-purple-500"
-        >
-          <CardContent className="py-8">
-            <div className="flex items-center gap-2">
-              <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                Premium
-              </h3>
-              <span className="text-xs font-bold uppercase bg-cyan-800 bg-opacity-20 text-cyan-500 px-2 py-1 rounded-md">
-                2 months free
-              </span>
-            </div>
-            <div className="mt-4 text-6xl font-black">
-              <span>159,90 €</span>
-              <span className="text-sm text-muted-foreground">/per year</span>
-            </div>
-            <p className="mt-4 text-muted-foreground">
-              Same Premium, billed yearly — 13,32 € per month.
-            </p>
-            <div className="flex-1 flex flex-col justify-between px-6 py-4 bg-secondary rounded-lg m-1 space-t-6 p-3 mt-4">
-              <ul className="space-y-3">
-                {itemsPremium.map((item, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <span>✅</span>
-                    <span>{item.name}</span>
-                  </li>
-                ))}
-              </ul>
-              <form
-                action={createSubscription.bind(null, "yearly")}
-                className="w-full mt-4"
-              >
+              <form action={createSubscription} className="w-full mt-4">
                 <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
                   Grab it
                 </Button>

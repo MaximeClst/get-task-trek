@@ -153,40 +153,6 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card style={{ width: 300 }} className="h-fit border-purple-500">
-            <CardContent className="py-8">
-              <div className="flex items-center gap-2">
-                <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                  Premium
-                </h3>
-                <span className="text-xs font-bold uppercase bg-cyan-800 bg-opacity-20 text-cyan-500 px-2 py-1 rounded-md">
-                  2 mois offerts
-                </span>
-              </div>
-              <div className="mt-4 text-6xl font-black">
-                <span>159,90 €</span>
-                <span className="text-sm text-muted-foreground">/an</span>
-              </div>
-              <p className="mt-4 text-muted-foreground">
-                Le même Premium, à 13,32 € par mois.
-              </p>
-              <div className="px-6 py-4 bg-secondary rounded-lg m-1 mt-4">
-                <ul className="space-y-3">
-                  {itemsPremium.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span>✅</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/login" className="w-full">
-                  <Button className="w-full mt-4 bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
-                    Commencer
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </section>
     </main>

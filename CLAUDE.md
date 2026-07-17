@@ -147,16 +147,26 @@ model Note {
 
 ## Stripe — tarifs
 
-Deux plans : **Premium mensuel 15,99 €** et **Premium annuel 159,90 €** (2 mois offerts).
+**Un seul plan : Premium à 15,99 €/mois.** Un plan annuel a existé le 2026-07-17 puis a été
+abandonné ; son `Price` et son produit sont archivés côté Stripe, pas supprimés (Stripe ne
+supprime pas un `Price`).
+
+État du compte (test) : un produit **« Task Trek Premium »**, un `Price` actif récurrent mensuel.
 
 - **Un `Price` Stripe est immuable.** On ne modifie jamais un tarif : on crée un nouveau `Price`
-  et on remplace l'ID dans `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_YEARLY`. Le montant
-  affiché en JSX n'est que du texte — il n'engage rien, et doit rester aligné à la main.
-- **Le client n'envoie jamais de `priceId`.** Il envoie un intervalle (`monthly` | `yearly`),
-  validé contre une liste fermée ; le serveur résout le prix depuis l'environnement. Un `priceId`
-  venant du navigateur laisserait n'importe qui s'abonner au tarif de son choix.
-- Changer de tarif ne migre pas les abonnés existants : ils restent sur leur ancien `Price`
-  jusqu'à migration explicite.
+  et on remplace l'ID dans `STRIPE_PRICE_ID_MONTHLY`. Le montant affiché en JSX n'est que du
+  texte — il n'engage rien, et doit rester aligné à la main.
+- **Le client n'envoie jamais de `priceId`** : le serveur le résout depuis l'environnement.
+  Un `priceId` venant du navigateur laisserait n'importe qui s'abonner au tarif de son choix.
+  Si un jour un choix de plan revient, faire transiter un identifiant de plan validé contre une
+  liste fermée — jamais le `priceId` lui-même.
+- `createSubscription` refuse un `Price` non récurrent : la session est créée en
+  `mode: "subscription"`, que Stripe rejette pour un prix one-time.
+- La clé et les `Price` doivent être dans le **même mode** (test/live). Sinon : « No such price »,
+  sans indication de la cause.
+- Un tarif ne migre jamais les abonnés existants : ils restent sur leur ancien `Price`.
+- Deux prix d'une même offre vivent sur **un seul produit**, sinon le portail client ne sait pas
+  proposer de changement de période et le MRR se scinde dans les rapports.
 
 ## Stripe — les deux bugs à ne pas refaire
 

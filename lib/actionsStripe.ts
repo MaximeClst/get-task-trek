@@ -33,30 +33,9 @@ export const getDataStripeUser = async (userId: string) => {
   }
 };
 
-export type BillingInterval = "monthly" | "yearly";
-
-// Le client ne choisit qu'un intervalle, jamais un priceId : un priceId venant
-// du navigateur permettrait de s'abonner au tarif de son choix.
-const priceIdFor = (interval: BillingInterval) => {
-  const priceId =
-    interval === "yearly"
-      ? process.env.STRIPE_PRICE_ID_YEARLY
-      : process.env.STRIPE_PRICE_ID_MONTHLY;
-
-  if (!priceId) {
-    throw new Error(
-      `Aucun prix Stripe configuré pour l'intervalle "${interval}".`,
-    );
-  }
-
-  return priceId;
-};
-
-export const createSubscription = async (interval: BillingInterval) => {
-  if (interval !== "monthly" && interval !== "yearly") {
-    throw new Error(`Intervalle de facturation invalide : "${interval}".`);
-  }
-
+// Un seul plan: Premium mensuel. Le priceId est resolu ici, cote serveur, et
+// n'est jamais accepte depuis le client (qui choisirait alors son tarif).
+export const createSubscription = async () => {
   let subscriptionUrl: string;
 
   try {
@@ -79,12 +58,24 @@ export const createSubscription = async (interval: BillingInterval) => {
       throw new Error("User does not have a stripeCustomerId");
     }
 
-    const priceId = priceIdFor(interval);
+    const priceId = process.env.STRIPE_PRICE_ID_MONTHLY;
+    if (!priceId) {
+      throw new Error("STRIPE_PRICE_ID_MONTHLY n'est pas configure.");
+    }
 
     // Vérification du statut du `priceId`
     const price = await stripe.prices.retrieve(priceId);
     if (!price.active) {
       throw new Error(`The price specified (${priceId}) is inactive.`);
+    }
+
+    // La session est creee en mode "subscription", que Stripe refuse pour un
+    // prix one-time. Echouer ici donne un message clair, plutot qu'une erreur
+    // Stripe opaque au moment de payer.
+    if (!price.recurring) {
+      throw new Error(
+        `Le prix ${priceId} n'est pas recurrent (type "${price.type}") et ne peut pas servir a un abonnement.`,
+      );
     }
 
     const url = await getStripeSession({
