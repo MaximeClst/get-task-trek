@@ -4,6 +4,9 @@
 > pour artisans** (Supabase, palette orange #ff6b35, Fraunces, framer-motion) : **rien de tout cela
 > ne s'applique ici**. Task Trek est un SaaS, stack et design system ci-dessous.
 
+> **`ROADMAP.md`** liste ce qui reste à faire, par priorité, avec les décisions encore ouvertes.
+> Ce fichier-ci dit *comment* construire ; la roadmap dit *quoi*, et dans quel ordre.
+
 ## Produit
 
 Task Trek transforme de la parole en notes, tâches et rendez-vous organisés.
