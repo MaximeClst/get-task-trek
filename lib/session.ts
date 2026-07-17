@@ -33,3 +33,15 @@ export const getUser = cache(async () => {
     redirect("/login");
   }
 });
+
+// Garde des pages Premium. isPremium est lu EN BASE (via getUser), pas depuis la
+// session: apres une resiliation le webhook met isPremium a false, mais le cookie
+// de session garderait l'ancienne valeur jusqu'a reconnexion. Masquer un lien en
+// CSS ou rediriger cote client n'est pas un controle d'acces.
+export const requirePremium = cache(async () => {
+  const user = await getUser();
+  if (!user.isPremium) {
+    redirect("/dashboard/payment");
+  }
+  return user;
+});

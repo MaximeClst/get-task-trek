@@ -1,23 +1,12 @@
-"use client";
-
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import React from "react";
+import { requirePremium } from "@/lib/session";
 import CalendarComponent from "./CalendarComponent";
 
-export default function CalendarPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  React.useEffect(() => {
-    if (status === "loading") return; // Do nothing while loading
-    if (!session) router.push("/api/auth/signin"); // Redirect if not authenticated
-    if (session && !session.user.isPremium) router.push("/dashboard/payment"); // Redirect if not premium
-  }, [session, status, router]);
-
-  if (status === "loading") {
-    return <div>Chargement...</div>;
-  }
+// Server Component: requirePremium() relit isPremium en base et redirige un
+// compte gratuit vers /dashboard/payment AVANT tout rendu. L'ancienne version
+// etait "use client" et redirigeait dans un useEffect -- contournable, le
+// composant se montait quand meme.
+export default async function CalendarPage() {
+  await requirePremium();
 
   return (
     <div>

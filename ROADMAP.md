@@ -28,13 +28,12 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
 
 ## 1. Sécurité et facturation — à faire avant tout déploiement
 
-- [ ] **Le premium n'est que cosmétique.** Un compte gratuit accède à tout en tapant l'URL :
-  - `DashboardNav.tsx:42` masque les liens en CSS (`hidden`)
-  - `calendar/page.tsx:15` redirige **côté client** (contournable)
-  - `/dashboard/assistant` n'a **aucun** contrôle
-  - `/api/events` vérifie la session mais **jamais `isPremium`**
-
-  → Relire `isPremium` **en base**, dans chaque handler concerné. Jamais depuis la session ni le client.
+- [x] **Le premium n'est que cosmétique — corrigé (PR `fix/premium-serveur`).** Garde serveur
+  `requirePremium()` dans `lib/session.ts` qui relit `isPremium` **en base**. `/dashboard/calendar`
+  et `/dashboard/assistant` deviennent des Server Components qui redirigent un compte gratuit vers
+  `/dashboard/payment` avant tout rendu ; `/api/events` renvoie 403. Vérifié : gratuit → 307/403,
+  premium → 200, et **une session premium périmée (isPremium=false en base) est bloquée sans
+  reconnexion**.
 - [x] **Webhook Stripe — résiliation, réabonnement, idempotence.** Corrigés et vérifiés
   bout-en-bout avec de vrais événements Stripe (commit `85f6722`). Handlers `deleted`/`updated`
   ajoutés (le statut Stripe fait foi), `create` remplacé par `upsert` sur `userId`, table
