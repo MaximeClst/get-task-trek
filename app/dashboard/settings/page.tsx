@@ -9,7 +9,8 @@ import {
 } from "@/app/src/components/ui/card";
 import { Input } from "@/app/src/components/ui/input";
 import { Label } from "@/app/src/components/ui/label";
-import { deleteUser, getUser, updateUser } from "@/lib/actionsUsers";
+import { deleteUser, updateUser } from "@/lib/actionsUsers";
+import { getUser } from "@/lib/session";
 import Image from "next/image";
 
 export default async function PageSettings() {

@@ -5,7 +5,7 @@ import {
   createSubscription,
   getDataStripeUser,
 } from "@/lib/actionsStripe";
-import { getUser } from "@/lib/actionsUsers";
+import { getUser } from "@/lib/session";
 import Link from "next/link";
 
 export default async function PagePayment() {

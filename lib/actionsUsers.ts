@@ -2,33 +2,12 @@
 
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { authOptions } from "./AuthOptions";
 import { prisma } from "./db";
+import { getUser } from "./session";
 
-export const getUser = async () => {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user || !session.user.id) {
-      throw new Error("User not authenticated");
-    }
-
-    const id = session.user.id as string;
-    const user = await prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    return user;
-  } catch (error) {
-    console.error("Error retrieving user:", error);
-    // Ne jamais appeler getUser() depuis /login: cette redirection y bouclerait.
-    redirect("/login");
-  }
-};
+// getUser vit dans lib/session.ts: ce fichier est "use server", donc tout ce
+// qu'il exporte devient un endpoint HTTP public.
 
 export const updateUser = async (formData: FormData) => {
   try {

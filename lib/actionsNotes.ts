@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getUser } from "./actionsUsers";
+import { getUser } from "./session";
 import { prisma } from "./db";
 
 // Une Server Action est un endpoint HTTP public: n'importe qui peut l'appeler

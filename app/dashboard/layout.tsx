@@ -1,4 +1,4 @@
-import { getUser } from "@/lib/actionsUsers";
+import { getUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { ToastContainer } from "react-toastify";

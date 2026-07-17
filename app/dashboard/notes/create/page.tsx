@@ -13,9 +13,11 @@ import { Input } from "@/app/src/components/ui/input";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { createNote } from "@/lib/actionsNotes";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function CreatePage() {
   const [description, setDescription] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const startParam = searchParams.get("start");
@@ -35,6 +38,7 @@ export default function CreatePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const data = {
       title: title,
@@ -43,10 +47,23 @@ export default function CreatePage() {
       end: end,
     };
 
-    // createNote ne redirige plus (elle est aussi appelee par une route API,
-    // ou redirect() cassait la reponse): c'est a l'appelant de le faire.
-    await createNote(data);
-    router.push("/dashboard/notes");
+    // isSubmitting desarme le bouton pendant l'aller-retour: sans lui, rien ne
+    // bouge a l'ecran et l'utilisateur reclique, ce qui creait des doublons.
+    setIsSubmitting(true);
+    try {
+      // createNote ne redirige plus (elle est aussi appelee par une route API,
+      // ou redirect() cassait la reponse): c'est a l'appelant de le faire.
+      await createNote(data);
+      router.push("/dashboard/notes");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Création impossible.",
+        { autoClose: 3000 },
+      );
+      setIsSubmitting(false);
+    }
+    // Pas de setIsSubmitting(false) apres succes: la redirection est en cours,
+    // le bouton doit rester desarme jusqu'au changement de page.
   };
 
   return (
@@ -111,9 +128,18 @@ export default function CreatePage() {
           </Button>
           <Button
             type="submit"
-            className="bg-purple-400 hover:bg-purple-500 text-white"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            className="bg-purple-400 hover:bg-purple-500 text-white disabled:opacity-60"
           >
-            Créer une note
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 mr-2 animate-spin" />
+                Création…
+              </>
+            ) : (
+              "Créer une note"
+            )}
           </Button>
         </CardFooter>
       </form>

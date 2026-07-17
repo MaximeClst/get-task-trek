@@ -208,6 +208,31 @@ Google Calendar notifie déjà pour les rendez-vous. Notre valeur ajoutée est a
 - Coût : Whisper ≈ 0,006 $/min et il est sur le tier gratuit → surveiller, prévoir un garde-fou
   de durée d'enregistrement.
 
+## Latence — la contrainte qui gouverne le reste
+
+**L'utilisateur développe depuis La Réunion. La base Neon est à Frankfurt, à ~9 000 km.**
+Un aller-retour SQL depuis sa machine coûte **~300 ms** (mesuré : un `SELECT 1` met 300 ms,
+une vraie requête ~520 ms, une connexion à froid ~2,3 s). C'est de la physique, pas un bug.
+
+Conséquences, à garder en tête pour toute décision :
+
+- **Compter les allers-retours, pas les millisecondes.** Chaque requête séquentielle ajoute
+  ~300 ms en local. Ce qui coûte 5 ms en production coûte 60× plus ici.
+- `getUser()` vit dans **`lib/session.ts`** et est enveloppé dans `cache()` de React, qui le
+  dédoublonne sur la durée d'une requête — le layout du dashboard et la page qu'il rend
+  l'appellent tous les deux. Ne pas le réintroduire dans un fichier `"use server"` : ça
+  l'exposerait comme endpoint public, et casserait la déduplication.
+- **En production, ce problème disparaît** : Vercel (`fra1`) est à côté de Neon, l'aller-retour
+  tombe à quelques millisecondes. Ne pas conclure d'une lenteur locale à une lenteur en prod.
+- `getUser()` refait un `user.findUnique` alors que `getServerSession` a déjà chargé la ligne
+  via l'adaptateur Prisma. Un aller-retour de trop, pas encore optimisé.
+
+**Tout bouton déclenchant une action serveur doit afficher son état d'attente** — `useFormStatus`
+dans un enfant du `<form>`, ou un `isSubmitting` local. Désarmer le bouton pendant l'action :
+sans ça l'utilisateur reclique et crée des doublons. Et **ne jamais afficher un succès avant
+d'avoir le résultat** : le bouton de suppression toastait « supprimée avec succès » sur `onClick`,
+avant même l'appel, et mentait quand l'action échouait.
+
 ## Structure
 
 ```

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getUser } from "./actionsUsers";
+import { getUser } from "./session";
 import { prisma } from "./db";
 import { stripe } from "./stripe";
 
