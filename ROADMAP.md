@@ -35,14 +35,10 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   - `/api/events` vérifie la session mais **jamais `isPremium`**
 
   → Relire `isPremium` **en base**, dans chaque handler concerné. Jamais depuis la session ni le client.
-- [ ] **Webhook Stripe — résiliation jamais traitée.** Pas de handler
-  `customer.subscription.deleted` ni `.updated` : après résiliation, `isPremium` reste `true`
-  **à vie**. Accès premium gratuit et illimité.
-- [ ] **Webhook Stripe — le réabonnement plante.** `Subscription.userId` est `@unique` et le
-  webhook fait un `create` : un client qui se réabonne déclenche une violation de contrainte.
-  **Il paie sans récupérer son accès.** Un `upsert` règle les deux cas.
-- [ ] **Webhook Stripe — aucune idempotence**, alors que Stripe rejoue ses événements. Traiter
-  chaque `event.id` une seule fois.
+- [x] **Webhook Stripe — résiliation, réabonnement, idempotence.** Corrigés et vérifiés
+  bout-en-bout avec de vrais événements Stripe (commit `85f6722`). Handlers `deleted`/`updated`
+  ajoutés (le statut Stripe fait foi), `create` remplacé par `upsert` sur `userId`, table
+  `ProcessedWebhookEvent` pour l'idempotence.
 - [ ] **`middleware.ts` absent.** `/dashboard/**` n'est protégé que par le `getUser()` de chaque
   page : un oubli d'appel ouvre la page. À centraliser.
 - [ ] **Suppression de compte cassée (RGPD).** `deleteUser()` ne supprime ni les `Notes` ni les
