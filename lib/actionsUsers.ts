@@ -32,19 +32,22 @@ export const getUser = async () => {
 
 export const updateUser = async (formData: FormData) => {
   try {
+    // L'utilisateur vient de la session, jamais du formulaire: un champ cache
+    // est modifiable depuis le navigateur, et permettait ici de renommer
+    // n'importe quel compte.
+    const user = await getUser();
     const userName = formData.get("name") as string;
-    const id = formData.get("id") as string;
 
-    if (!userName || !id) {
+    if (!userName) {
       throw new Error("Missing required parameters");
     }
 
     await prisma.user.update({
-      where: { id },
+      where: { id: user.id },
       data: { name: userName },
     });
 
-    revalidatePath("/profile");
+    revalidatePath("/dashboard/settings");
   } catch (error) {
     console.error("Error updating user:", error);
     throw error; // Ensure error is propagated

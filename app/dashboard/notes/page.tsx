@@ -2,13 +2,12 @@ import ButtonDelete from "@/app/components/ButtonDelete";
 import { Button } from "@/app/src/components/ui/button";
 import { Card } from "@/app/src/components/ui/card";
 import { getAllNotes } from "@/lib/actionsNotes";
-import { getUser } from "@/lib/actionsUsers";
 import { File } from "lucide-react";
 import Link from "next/link";
 
 export default async function PageNotes() {
-  const user = await getUser();
-  const data = await getAllNotes(user?.id as string);
+  // getAllNotes() ne prend plus d'userId: elle resout l'utilisateur elle-meme.
+  const data = await getAllNotes();
   return (
     <section className="grid items-start gap-y-4">
       <div className="flex items-center md:items-center md:justify-between flex-col md:flex-row px-2">

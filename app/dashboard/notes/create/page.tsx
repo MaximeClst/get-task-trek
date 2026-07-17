@@ -14,10 +14,11 @@ import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { createNote } from "@/lib/actionsNotes";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function CreatePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -35,7 +36,6 @@ export default function CreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
     const data = {
       title: title,
       description: description,
@@ -43,7 +43,10 @@ export default function CreatePage() {
       end: end,
     };
 
+    // createNote ne redirige plus (elle est aussi appelee par une route API,
+    // ou redirect() cassait la reponse): c'est a l'appelant de le faire.
     await createNote(data);
+    router.push("/dashboard/notes");
   };
 
   return (

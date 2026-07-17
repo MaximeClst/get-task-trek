@@ -25,9 +25,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files
-.env
-.env*.local
-.env.production
+# `.env*` attrape toute variante (.env.local, .env.vercel, .env.backup...).
+# Seul .env.example, qui ne contient que des placeholders, est suivi.
+.env*
+!.env.example
 
 # vercel
 .vercel

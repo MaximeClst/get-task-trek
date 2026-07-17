@@ -24,8 +24,9 @@ La différence entre les deux offres n'est **pas** la dictée : c'est **qui fait
 Autrement dit : en Free, l'IA n'intervient **que** pour la transcription. Tout le reste est
 saisi par l'utilisateur. C'est la frontière à respecter dans le code.
 
-> **À trancher :** y a-t-il un quota de notes en Free ? Non décidé. Ne pas inventer de limite ;
-> l'ancien `notesCount` était du code mort qui restait à 0 — ne pas le ressusciter.
+**Quota Free : 10 notes.** Il est réellement appliqué dans `createNote` (`lib/actionsNotes.ts`),
+par un `count()` en base — à ne pas confondre avec le champ `User.notesCount`, qui lui est du code
+mort resté à 0 et qu'il faut supprimer, pas ressusciter.
 
 ## Stack
 

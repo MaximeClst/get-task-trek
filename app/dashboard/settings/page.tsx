@@ -23,7 +23,6 @@ export default async function PageSettings() {
       <div className="w-12 bg-white my-2 mx-1 h-[1px]"></div>
 
       <form action={updateUser}>
-        <Input type="hidden" name="id" value={user?.id} />
         <Card>
           <CardHeader>
             <CardTitle>Paramètres globales</CardTitle>
@@ -78,7 +77,6 @@ export default async function PageSettings() {
       </form>
 
       <form action={deleteUser}>
-        <Input type="hidden" name="id" value="" />
         <Button className="bg-red-500 mx-1 my-2 hover:bg-red-600 text-white">
           Supprimer votre compte
         </Button>
