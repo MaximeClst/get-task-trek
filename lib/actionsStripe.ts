@@ -33,7 +33,32 @@ export const getDataStripeUser = async (userId: string) => {
   }
 };
 
-export const createSubscription = async () => {
+export type BillingInterval = "monthly" | "yearly";
+
+// Le client ne choisit qu'un intervalle, jamais un priceId : un priceId venant
+// du navigateur permettrait de s'abonner au tarif de son choix.
+const priceIdFor = (interval: BillingInterval) => {
+  const priceId =
+    interval === "yearly"
+      ? process.env.STRIPE_PRICE_ID_YEARLY
+      : process.env.STRIPE_PRICE_ID_MONTHLY;
+
+  if (!priceId) {
+    throw new Error(
+      `Aucun prix Stripe configuré pour l'intervalle "${interval}".`,
+    );
+  }
+
+  return priceId;
+};
+
+export const createSubscription = async (interval: BillingInterval) => {
+  if (interval !== "monthly" && interval !== "yearly") {
+    throw new Error(`Intervalle de facturation invalide : "${interval}".`);
+  }
+
+  let subscriptionUrl: string;
+
   try {
     const user = await getUser();
 
@@ -54,7 +79,7 @@ export const createSubscription = async () => {
       throw new Error("User does not have a stripeCustomerId");
     }
 
-    const priceId = process.env.STRIPE_API_ID as string;
+    const priceId = priceIdFor(interval);
 
     // Vérification du statut du `priceId`
     const price = await stripe.prices.retrieve(priceId);
@@ -62,7 +87,7 @@ export const createSubscription = async () => {
       throw new Error(`The price specified (${priceId}) is inactive.`);
     }
 
-    const subscriptionUrl = await getStripeSession({
+    const url = await getStripeSession({
       customerId: dbUser.stripeCustomerId,
       domainUrl:
         process.env.NEXT_PUBLIC_DOMAIN_URL ||
@@ -70,15 +95,19 @@ export const createSubscription = async () => {
       priceId: priceId,
     });
 
-    if (!subscriptionUrl) {
+    if (!url) {
       throw new Error("Failed to create subscription session.");
     }
 
-    return redirect(subscriptionUrl);
+    subscriptionUrl = url;
   } catch (error) {
     console.error("Error creating subscription:", error);
     throw error;
   }
+
+  // redirect() lève NEXT_REDIRECT : le garder hors du try/catch, sinon il est
+  // capturé et journalisé comme une erreur alors que tout s'est bien passé.
+  redirect(subscriptionUrl);
 };
 
 export const createCustomerPortal = async () => {

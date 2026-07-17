@@ -145,6 +145,19 @@ model Note {
 }
 ```
 
+## Stripe — tarifs
+
+Deux plans : **Premium mensuel 15,99 €** et **Premium annuel 159,90 €** (2 mois offerts).
+
+- **Un `Price` Stripe est immuable.** On ne modifie jamais un tarif : on crée un nouveau `Price`
+  et on remplace l'ID dans `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_YEARLY`. Le montant
+  affiché en JSX n'est que du texte — il n'engage rien, et doit rester aligné à la main.
+- **Le client n'envoie jamais de `priceId`.** Il envoie un intervalle (`monthly` | `yearly`),
+  validé contre une liste fermée ; le serveur résout le prix depuis l'environnement. Un `priceId`
+  venant du navigateur laisserait n'importe qui s'abonner au tarif de son choix.
+- Changer de tarif ne migre pas les abonnés existants : ils restent sur leur ancien `Price`
+  jusqu'à migration explicite.
+
 ## Stripe — les deux bugs à ne pas refaire
 
 Le webhook v1 perdait de l'argent dans les deux sens :
@@ -203,15 +216,11 @@ Ne pas recréer : `lib/createNote.ts`, `app/api/limitNote.ts` (handlers Pages Ro
 
 ## Environnement
 
-`.env.example` est obligatoire et tenu à jour — la v1 avait 11 variables requises, zéro documentée.
+Voir **`.env.example`**, qui fait foi et doit être mis à jour à chaque nouvelle variable.
+`NEXTAUTH_SECRET`, `NEXTAUTH_URL` et `DATABASE_URL` n'apparaissent pas dans le code (lues
+implicitement par NextAuth et Prisma) mais sont requises — un `grep process.env` les rate.
 
-```
-DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL,
-GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-OPENAI_API_KEY,
-STRIPE_KEY_SECRET, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID,
-RESEND_API_KEY, CRON_SECRET
-```
+À ajouter au fil de la v2 : `RESEND_API_KEY`, `CRON_SECRET`.
 
 ### Vérifier le projet
 
