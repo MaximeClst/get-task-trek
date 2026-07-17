@@ -10,12 +10,15 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
 
 ## 0. Décisions à prendre (bloquent la suite)
 
-- [ ] **Quel modèle Free/Premium ?** Deux versions coexistent aujourd'hui et se contredisent :
-  - `CLAUDE.md` : Free = dictée + tri **manuel** · Premium = l'**IA** trie
-  - `/dashboard/payment` + le code : Free = **10 notes** · Premium = notes illimitées + calendrier + assistant
+- [x] **Modèle Free/Premium — tranché le 2026-07-17.** L'axe est **l'automatisation**, avec un
+  **plafond de volume sur le Free** :
+  - **Free** : dictée + transcription, puis **tri manuel** (l'utilisateur classe et catégorise
+    lui-même), **plafonné à 10 notes/transcriptions**.
+  - **Premium** : dictée + transcription, puis **l'IA trie** (classe, catégorise, pousse au
+    calendrier), **sans plafond**, + rappels e-mail.
 
-  L'un vend l'automatisation, l'autre le volume. Trancher **avant** d'écrire l'IA : ce choix
-  décide de quoi se branche derrière le paywall.
+  Concrètement dans le code : le plafond de 10 est un `count()` en base dans `createNote`
+  (déjà en place). Le tri IA et le calendrier auto se branchent derrière `isPremium`.
 - [ ] **Rappels e-mail : quelle valeur ajoutée ?** Google Agenda notifie déjà pour les
   rendez-vous. L'intérêt réel est sur les **tâches**, qui ne vivent pas dans Google.
 - [ ] **Postgres local pour le dev ?** ~300 ms par aller-retour vers Frankfurt depuis La Réunion.
