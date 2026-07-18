@@ -1,5 +1,7 @@
 import { authOptions } from "@/lib/AuthOptions";
+import { prisma } from "@/lib/db";
 import openai from "@/lib/openai";
+import { ajouterSecondes, lireUsage } from "@/lib/quotaTranscription";
 import { checkRateLimit } from "@/lib/rateLimit";
 import {
   ACCEPTED_AUDIO_TYPES,
@@ -8,6 +10,17 @@ import {
 } from "@/lib/transcription";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+// Le SDK openai 4.56 type le retour comme { text } quel que soit le
+// response_format: TranscriptionVerbose n'existe que dans des versions plus
+// recentes. Plutot qu'un cast aveugle, on valide la forme reellement recue.
+// Si OpenAI change son format, on le saura par une duree a 0 -- pas par un
+// plantage, ni par un quota qui cesse silencieusement de compter.
+const reponseWhisperSchema = z.object({
+  text: z.string().optional(),
+  duration: z.number().nonnegative().optional(),
+});
 
 // La transcription est ouverte a TOUS, Free inclus: c'est le seul appel IA du
 // tier gratuit (voir CLAUDE.md). Le Premium n'automatise pas la dictee, il
@@ -33,6 +46,31 @@ export async function POST(req: Request) {
           "Vous avez atteint la limite de dictées pour cette heure. Réessayez plus tard.",
       },
       { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
+    );
+  }
+
+  // isPremium est relu EN BASE, jamais depuis la session: apres une
+  // resiliation le cookie garderait l'ancienne valeur et donnerait le quota
+  // Premium a un compte redevenu gratuit. Regle 2 du CLAUDE.md.
+  const utilisateur = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isPremium: true },
+  });
+
+  const usage = await lireUsage(userId, utilisateur?.isPremium ?? false);
+
+  if (usage.restantSecondes <= 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Vous avez atteint votre quota de dictée pour ce mois-ci.",
+        quota: {
+          utiliseSecondes: usage.utiliseSecondes,
+          quotaSecondes: usage.quotaSecondes,
+          renouvelleLe: usage.renouvelleLe.toISOString(),
+        },
+      },
+      { status: 429 }
     );
   }
 
@@ -103,7 +141,25 @@ export async function POST(req: Request) {
       // Deterministe: a audio egal, meme transcription. Whisper "invente"
       // davantage quand la temperature monte.
       temperature: 0,
+      // verbose_json rend la DUREE reellement traitee. C'est elle qu'OpenAI
+      // facture, et donc la seule mesure honnete a decompter du quota -- une
+      // duree annoncee par le navigateur serait declarative, donc falsifiable.
+      response_format: "verbose_json",
     });
+
+    const parsed = reponseWhisperSchema.safeParse(transcription);
+    const duree = parsed.success ? (parsed.data.duration ?? 0) : 0;
+
+    if (!parsed.success || parsed.data.duration === undefined) {
+      // Le quota ne compterait plus rien sans qu'on s'en apercoive: on le dit.
+      console.error(
+        "Durée absente de la réponse Whisper — quota non décompté pour cet appel."
+      );
+    }
+
+    // La duree est comptabilisee meme si le texte revient vide: l'appel a ete
+    // facture, il doit etre decompte.
+    await ajouterSecondes(userId, duree);
 
     const text = transcription.text?.trim() ?? "";
 
@@ -114,7 +170,13 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ text });
+    // On renvoie le restant pour que l'ecran l'affiche sans avoir a redemander.
+    const apres = Math.max(0, usage.restantSecondes - duree);
+
+    return NextResponse.json({
+      text,
+      restantSecondes: Math.floor(apres),
+    });
   } catch (error) {
     // On ne renvoie jamais le message d'OpenAI tel quel: il peut contenir des
     // details d'infrastructure, voire un fragment de cle selon l'erreur.

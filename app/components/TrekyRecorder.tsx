@@ -34,10 +34,21 @@ function formaterDuree(secondes: number): string {
 
 export default function TrekyRecorder({
   categories,
+  restantSecondes,
+  quotaSecondes,
+  renouvelleLe,
 }: {
   categories: Categorie[];
+  restantSecondes: number;
+  quotaSecondes: number;
+  renouvelleLe: string;
 }) {
   const router = useRouter();
+
+  // Le restant vient du serveur au chargement, puis de chaque reponse de
+  // transcription: on evite un aller-retour de plus juste pour rafraichir un
+  // compteur. Ce n'est qu'un affichage -- le refus vient du serveur.
+  const [restant, setRestant] = useState(restantSecondes);
 
   const [etape, setEtape] = useState<Etape>("pret");
   const [secondes, setSecondes] = useState(0);
@@ -143,6 +154,10 @@ export default function TrekyRecorder({
         return;
       }
 
+      if (typeof donnees.restantSecondes === "number") {
+        setRestant(donnees.restantSecondes);
+      }
+
       setTranscript(donnees.text);
       // Un titre par defaut tire des premiers mots: l'utilisateur le corrige,
       // mais il n'a pas a partir d'un champ vide.
@@ -200,7 +215,7 @@ export default function TrekyRecorder({
           <Button
             type="button"
             onClick={demarrer}
-            disabled={etape === "transcrit"}
+            disabled={etape === "transcrit" || restant <= 0}
             className="h-20 w-20 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white disabled:opacity-60"
             aria-label="Démarrer l'enregistrement"
           >
@@ -216,8 +231,28 @@ export default function TrekyRecorder({
           {etape === "enregistre" &&
             `${formaterDuree(secondes)} / ${formaterDuree(MAX_RECORDING_SECONDS)}`}
           {etape === "transcrit" && "Transcription en cours…"}
-          {etape === "pret" && "Appuyez et dictez"}
+          {etape === "pret" && restant > 0 && "Appuyez et dictez"}
+          {etape === "pret" && restant <= 0 && "Quota mensuel épuisé"}
           {etape === "relit" && "Relisez, corrigez, classez"}
+        </p>
+
+        {/* Un plafond invisible est un plafond qui surprend: on affiche le
+            restant en permanence, et on previent avant qu'il ne soit atteint. */}
+        <p className="text-xs text-muted-foreground">
+          {restant <= 0 ? (
+            <>
+              Quota renouvelé le{" "}
+              {new Date(renouvelleLe).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+              })}
+            </>
+          ) : (
+            <>
+              {Math.floor(restant / 60)} min restantes ce mois-ci sur{" "}
+              {Math.round(quotaSecondes / 60)}
+            </>
+          )}
         </p>
       </div>
 
