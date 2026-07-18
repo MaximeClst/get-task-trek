@@ -11,6 +11,7 @@
 /.next/
 # Builds de verification lances pendant que `next dev` tourne (NEXT_DIST_DIR)
 /.next-verify/
+/.next-dev-test/
 /out/
 
 # production

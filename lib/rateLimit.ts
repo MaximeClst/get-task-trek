@@ -33,6 +33,11 @@ export const RATE_LIMITS = {
   createEvent: { limit: 30, windowSeconds: 60 },
   // On cree une categorie de temps en temps, pas en rafale.
   createCategory: { limit: 20, windowSeconds: 60 },
+  // Le SEUL plafond qui protege de l'argent reel. Whisper coute ~0,006 $/min et
+  // il est ouvert au tier gratuit. 20 dictees de 2 min par heure plafonnent un
+  // compte a ~0,24 $/h dans le pire des cas. Fenetre horaire et non minute:
+  // c'est la consommation cumulee qui coute, pas la rafale.
+  transcribe: { limit: 20, windowSeconds: 3600 },
   // Chaque appel declenche DEUX appels a l'API Stripe. Personne n'a besoin
   // d'ouvrir cinq tunnels de paiement par minute.
   createSubscription: { limit: 5, windowSeconds: 60 },
