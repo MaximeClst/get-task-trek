@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "./session";
 import { prisma } from "./db";
 import { stripe } from "./stripe";
+import { enforceRateLimit } from "./rateLimit";
 
 export const getDataStripeUser = async (userId: string) => {
   try {
@@ -44,6 +45,11 @@ export const createSubscription = async () => {
     if (!user) {
       throw new Error("User not authenticated");
     }
+
+    // Avant tout appel a Stripe: cette action en declenche deux (retrieve du
+    // prix, puis creation de la session). Les marteler coute des appels API
+    // facturables et peut nous faire limiter par Stripe lui-meme.
+    await enforceRateLimit("createSubscription", user.id);
 
     const dbUser = await prisma.user.findUnique({
       where: {

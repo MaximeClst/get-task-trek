@@ -9,6 +9,7 @@ import {
   updateNoteSchema,
   firstError,
 } from "./validationNotes";
+import { enforceRateLimit } from "./rateLimit";
 
 // Une Server Action est un endpoint HTTP public: n'importe qui peut l'appeler
 // avec les arguments de son choix. Aucun identifiant venant du client n'est
@@ -46,6 +47,8 @@ export const createNote = async ({
   if (!parsed.success) {
     throw new Error(firstError(parsed.error));
   }
+
+  await enforceRateLimit("createNote", user.id);
 
   // Vérifier la limite de 10 notes
   const userNotesCount = await prisma.notes.count({

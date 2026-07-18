@@ -69,9 +69,19 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   compte des *lignes*, pas des *octets*, donc dix notes suffisaient à stocker des gigaoctets.
   Validation Zod côté serveur dans `lib/validationNotes.ts` (titre 200, description 10 000,
   dates réelles), `maxLength` côté formulaire pour l'affichage seulement.
-- [ ] **Limitation de débit — reste à faire.** Le fichier supprimé ne protégeait rien, mais le
-  besoin est réel dès que les endpoints IA existeront (Whisper coûte de l'argent, sur le tier
-  gratuit). À traiter avec une solution compatible Edge/serverless, pas un middleware Express.
+- [x] **Limitation de débit — faite (PR `feat/limitation-debit`).** `lib/rateLimit.ts`, adossé à
+  Postgres (table `RateLimit`, fenêtre fixe, `INSERT … ON CONFLICT` atomique en un seul
+  aller-retour). Pas de service externe, pas de variable d'environnement en plus.
+  **Branché sur trois endpoints**, pas seulement écrit : `createNote` (30/min), `/api/events` POST
+  (30/min, vrai `429` + `Retry-After`), `createSubscription` (5/min — chaque appel déclenche deux
+  appels facturables à l'API Stripe).
+  Vérifié sur la base, dont le cas qui fait la différence : **20 requêtes simultanées, exactement
+  5 passent**. Un limiteur qui lit puis écrit échouerait ici.
+  Choix assumé : **fail-open** si le limiteur lui-même tombe (voir commentaire dans le fichier).
+- [ ] **Plafonner Whisper au tier gratuit.** Le point ci-dessus pose la mécanique ; il reste à
+  l'appliquer à la transcription quand elle existera, avec en plus un **garde-fou de durée
+  d'enregistrement**. C'est le seul appel IA du tier gratuit, donc le seul coût variable qu'un
+  compte gratuit peut nous faire payer — et le multi-compte Google ne se bloque pas (§4).
 
 ---
 
