@@ -36,11 +36,13 @@ export default function DashboardNav() {
         );
       })}
 
-      {/* Ai Assistant et Calendar visibles uniquement si l'utilisateur est premium */}
+      {/* Confort d'affichage uniquement: on masque les liens Premium aux comptes
+          gratuits. Le vrai controle d'acces est cote serveur (requirePremium sur
+          les pages /dashboard/assistant et /dashboard/calendar). */}
       <div
         className={`${
-          session?.user?.isPremium ? "" : "hidden"
-        } : flex md:flex-col md:h-full md:w-16 w-full lg:w-40 gap-2`}
+          session?.user?.isPremium ? "flex" : "hidden"
+        } md:flex-col md:h-full md:w-16 w-full lg:w-40 gap-2`}
       >
         <Link href="/dashboard/assistant">
           <div

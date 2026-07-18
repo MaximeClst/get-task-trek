@@ -31,6 +31,16 @@ saisi par l'utilisateur. C'est la frontière à respecter dans le code.
 par un `count()` en base — à ne pas confondre avec le champ `User.notesCount`, qui lui est du code
 mort resté à 0 et qu'il faut supprimer, pas ressusciter.
 
+## Workflow Git
+
+- `main` = stable. `dev` = intégration. **On ne commite jamais directement sur `main`.**
+- Chaque tâche part d'une **branche dédiée créée depuis `dev`** (`fix/…`, `feat/…`, `chore/…`)
+  et fusionne dans `dev` **par une PR**. `dev → main` se fait aux jalons.
+- Remote : `origin` = `github.com/MaximeClst/get-task-trek` (public).
+- Fins de ligne : le dépôt distant est en **LF**, la copie locale en **CRLF**. À normaliser un jour
+  via `.gitattributes` (`* text=auto eol=lf`) ; sans quoi les diffs peuvent paraître énormes alors
+  que seul le retour chariot change (`git diff --ignore-all-space` pour voir le vrai écart).
+
 ## Stack
 
 - **Next.js 14**, App Router, TypeScript `strict`

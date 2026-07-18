@@ -3,17 +3,40 @@ import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
-export async function GET(req: Request) {
+// Authentifie puis exige le Premium, en relisant isPremium EN BASE (pas depuis
+// la session, qui reste premium apres une resiliation jusqu'a reconnexion).
+// Renvoie soit une NextResponse d'erreur (a retourner tel quel), soit l'userId.
+async function requirePremiumUser(): Promise<
+  { error: NextResponse } | { userId: string }
+> {
   const session = await getServerSession(authOptions);
-
-  // Vérification de l'authentification
-  if (!session) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!session?.user?.id) {
+    return { error: NextResponse.json({ error: "Non autorisé" }, { status: 401 }) };
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isPremium: true },
+  });
+  if (!user?.isPremium) {
+    return {
+      error: NextResponse.json(
+        { error: "Réservé aux abonnés Premium" },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { userId: session.user.id };
+}
+
+export async function GET(req: Request) {
+  const auth = await requirePremiumUser();
+  if ("error" in auth) return auth.error;
 
   try {
     const events = await prisma.event.findMany({
-      where: { userId: session.user.id },
+      where: { userId: auth.userId },
     });
 
     return NextResponse.json({ events });
@@ -27,12 +50,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  // Vérification de l'authentification
-  if (!session) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const auth = await requirePremiumUser();
+  if ("error" in auth) return auth.error;
 
   try {
     const { title, description, start, end, allDay } = await req.json();
@@ -68,7 +87,7 @@ export async function POST(req: Request) {
         start: startDate,
         end: endDate,
         allDay: allDay || false,
-        userId: session.user.id,
+        userId: auth.userId,
       },
     });
 
