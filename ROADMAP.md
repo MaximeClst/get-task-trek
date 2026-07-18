@@ -52,11 +52,18 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   le middleware peut tourner en runtime Node (donc lire la base). Passer aux sessions JWT ferait
   l'affaire techniquement mais réintroduirait un `isPremium` figé dans le cookie — exactement le
   bug que la PR `fix/premium-serveur` vient de corriger. À revoir lors du passage à Next 15.
-- [ ] **Suppression de compte cassée (RGPD).** `deleteUser()` ne supprime ni les `Notes` ni les
-  `Event`, qui n'ont pas de `onDelete: Cascade` → erreur Prisma `P2003`. Tout utilisateur ayant
-  au moins une note **ne peut pas supprimer son compte**.
-- [ ] **`lib/rateLimiter.ts`** n'est importé nulle part, et `express-rate-limit` est de toute
-  façon incompatible avec l'App Router. Supprimer, ou remplacer par une vraie solution.
+- [x] **Suppression de compte (RGPD) — corrigée (PR `fix/suppression-compte-rgpd`).**
+  `onDelete: Cascade` ajouté sur `Notes`, `Event` et `Subscription` (migration
+  `20260718074152_cascade_delete_user_data`, qui ne touche que les contraintes, aucune donnée).
+  `deleteUser()` énumérait les tables à vider à la main et en oubliait deux : la liste manuelle
+  *était* le bug, elle est remplacée par un unique `user.delete()`. Vérifié sur la base avec un
+  compte jetable portant note + rendez-vous + abonnement + compte OAuth + session : suppression
+  sans `P2003`, zéro ligne orpheline.
+- [x] **`lib/rateLimiter.ts` supprimé**, et `express-rate-limit` désinstallé. Importé nulle part,
+  et incompatible avec l'App Router de toute façon.
+- [ ] **Limitation de débit — reste à faire.** Le fichier supprimé ne protégeait rien, mais le
+  besoin est réel dès que les endpoints IA existeront (Whisper coûte de l'argent, sur le tier
+  gratuit). À traiter avec une solution compatible Edge/serverless, pas un middleware Express.
 
 ---
 
