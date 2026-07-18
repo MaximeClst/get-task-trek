@@ -90,6 +90,19 @@ export async function POST(req: Request) {
       file: nomme,
       model: "whisper-1",
       language: "fr",
+      // Whisper se sert du prompt comme d'un contexte: il l'oriente vers un
+      // registre et un vocabulaire. Donner un exemple de note bien ponctuee
+      // ameliore nettement la ponctuation et les mots du domaine (rendez-vous,
+      // echeance, rappeler...), qu'il rendait sinon phonetiquement.
+      // Ce n'est PAS une instruction: Whisper ne suit pas des consignes, il
+      // s'aligne sur le style de ce qu'on lui donne.
+      prompt:
+        "Note personnelle en français. Exemples : Rappeler le plombier demain matin. " +
+        "Rendez-vous chez le dentiste jeudi à 14 h. Acheter du pain et des œufs. " +
+        "Échéance du dossier vendredi.",
+      // Deterministe: a audio egal, meme transcription. Whisper "invente"
+      // davantage quand la temperature monte.
+      temperature: 0,
     });
 
     const text = transcription.text?.trim() ?? "";
