@@ -4,6 +4,13 @@ import { Card } from "@/app/src/components/ui/card";
 import { getAllNotes } from "@/lib/actionsNotes";
 import { File } from "lucide-react";
 import Link from "next/link";
+import type { NoteType } from "@prisma/client";
+
+const TYPE_LABELS: Record<NoteType, string> = {
+  NOTE: "Note",
+  TASK: "Tâche",
+  EVENT: "Rendez-vous",
+};
 
 export default async function PageNotes() {
   // getAllNotes() ne prend plus d'userId: elle resout l'utilisateur elle-meme.
@@ -37,12 +44,28 @@ export default async function PageNotes() {
         <div className="flex flex-col space-y-4">
           {data?.map((item, index) => (
             <Card key={index} className="flex items-center justify-between p-4">
-              <div>
+              <div className="flex flex-col gap-1">
                 <Link href={`notes/note/${item.id}`}>
                   <h2 className="text-purple-400 text-xl font-bold">
                     {item.title}
                   </h2>
                 </Link>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="rounded border px-1.5 py-0.5">
+                    {TYPE_LABELS[item.type]}
+                  </span>
+                  {item.startAt && (
+                    <span>
+                      {item.startAt.toLocaleDateString("fr-FR", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                  {item.category && <span>· {item.category.name}</span>}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <ButtonDelete id={item.id} />

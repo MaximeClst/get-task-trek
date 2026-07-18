@@ -1,6 +1,7 @@
 import { authOptions } from "@/lib/AuthOptions";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { createEventSchema, firstError } from "@/lib/validationNotes";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
@@ -36,9 +37,20 @@ export async function GET(req: Request) {
   if ("error" in auth) return auth.error;
 
   try {
-    const events = await prisma.event.findMany({
-      where: { userId: auth.userId },
+    // Un rendez-vous est une note de type EVENT depuis la fusion des modeles.
+    const notes = await prisma.note.findMany({
+      where: { userId: auth.userId, type: "EVENT" },
     });
+
+    // FullCalendar attend { title, start, end, allDay }: on projette plutot que
+    // de lui imposer la forme de notre modele.
+    const events = notes.map((note) => ({
+      id: note.id,
+      title: note.title,
+      start: note.startAt,
+      end: note.endAt,
+      allDay: note.allDay,
+    }));
 
     return NextResponse.json({ events });
   } catch (error) {
@@ -65,39 +77,43 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { title, description, start, end, allDay } = await req.json();
+    const body = await req.json();
 
-    // Validation des données
-    if (!title || !start || !end) {
+    // Meme schema Zod que le reste: les verifications a la main qui vivaient
+    // ici laissaient passer un titre de 5 Mo et rendaient des messages
+    // differents pour le meme genre d'erreur.
+    const parsed = createEventSchema.safeParse({
+      title: body.title,
+      content: body.content ?? body.description ?? "",
+      startAt: body.startAt ?? body.start,
+      endAt: body.endAt ?? body.end,
+      allDay: Boolean(body.allDay),
+    });
+
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Paramètres manquants" },
+        { error: firstError(parsed.error) },
         { status: 400 }
       );
     }
 
-    // Vérification du format des dates
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
-        { error: "Format de date invalide" },
-        { status: 400 }
-      );
-    }
+    const startDate = new Date(parsed.data.startAt);
+    const endDate = new Date(parsed.data.endAt);
 
     // Gestion des événements en mode toute la journée
-    if (allDay) {
+    if (parsed.data.allDay) {
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999);
     }
 
-    const event = await prisma.event.create({
+    const event = await prisma.note.create({
       data: {
-        title,
-        description,
-        start: startDate,
-        end: endDate,
-        allDay: allDay || false,
+        type: "EVENT",
+        title: parsed.data.title,
+        content: parsed.data.content,
+        startAt: startDate,
+        endAt: endDate,
+        allDay: parsed.data.allDay,
         userId: auth.userId,
       },
     });

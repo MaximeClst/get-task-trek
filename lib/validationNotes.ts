@@ -8,7 +8,12 @@ import { z } from "zod";
 // La validation cote client ne compte pas -- les Server Actions sont des
 // endpoints HTTP publics, appelables sans passer par le formulaire.
 export const TITLE_MAX = 200;
-export const DESCRIPTION_MAX = 10_000;
+export const CONTENT_MAX = 10_000;
+
+// Les trois types du modele fusionne. En Free l'utilisateur choisit lui-meme;
+// en Premium l'IA propose. Le schema Zod est le meme dans les deux cas: une
+// sortie de modele n'est pas plus digne de confiance qu'une saisie humaine.
+export const NOTE_TYPES = ["NOTE", "TASK", "EVENT"] as const;
 
 // .trim() avant .min(1): un titre fait uniquement d'espaces n'est pas un titre.
 const title = z
@@ -17,13 +22,15 @@ const title = z
   .min(1, "Le titre est obligatoire.")
   .max(TITLE_MAX, `Le titre ne peut pas depasser ${TITLE_MAX} caracteres.`);
 
-const description = z
+const content = z
   .string()
   .trim()
   .max(
-    DESCRIPTION_MAX,
-    `La description ne peut pas depasser ${DESCRIPTION_MAX} caracteres.`
+    CONTENT_MAX,
+    `Le contenu ne peut pas depasser ${CONTENT_MAX} caracteres.`
   );
+
+const noteType = z.enum(NOTE_TYPES);
 
 // new Date("n'importe quoi") ne leve pas: il rend un Invalid Date, que Prisma
 // refuse ensuite avec une erreur illisible. On rejette ici, avec un message.
@@ -33,18 +40,31 @@ const dateString = z
     message: "Date invalide.",
   });
 
+// Les dates sont optionnelles: une note simple n'en a pas. Elles ne devenaient
+// obligatoires que parce que l'ancien formulaire en envoyait toujours.
 export const createNoteSchema = z.object({
+  type: noteType.default("NOTE"),
   title,
-  description,
-  start: dateString,
-  end: dateString,
+  content,
+  startAt: dateString.optional(),
+  endAt: dateString.optional(),
 });
 
 export const updateNoteSchema = z.object({
   id: z.string().min(1),
+  type: noteType,
   title,
-  description,
+  content,
   completed: z.boolean(),
+});
+
+// Un rendez-vous sans date de debut n'est pas un rendez-vous.
+export const createEventSchema = z.object({
+  title,
+  content,
+  startAt: dateString,
+  endAt: dateString,
+  allDay: z.boolean().default(false),
 });
 
 // Zod agrege toutes les erreurs; on ne remonte que la premiere, la seule que

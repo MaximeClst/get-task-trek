@@ -11,29 +11,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { title, description, date } = await req.json();
+  const { title, content, description, date, type } = await req.json();
 
-  // Vérification des paramètres requis
-  if (!title || !description || !date) {
-    return NextResponse.json(
-      { error: "Paramètres manquants" },
-      { status: 400 }
-    );
+  // Vérification des paramètres requis. Le contenu et la date sont desormais
+  // facultatifs: une note simple n'a ni echeance ni corps obligatoire. La
+  // validation de fond (longueurs, dates reelles) vit dans createNote.
+  if (!title) {
+    return NextResponse.json({ error: "Titre manquant" }, { status: 400 });
   }
 
   try {
-    // Conversion de la date
-    const start = new Date(date).toISOString();
-    const end = new Date(
-      new Date(date).getTime() + 60 * 60 * 1000
-    ).toISOString(); // 1 heure plus tard
+    // Une date fournie donne un creneau d'une heure, comme avant.
+    const startAt = date ? new Date(date).toISOString() : undefined;
+    const endAt = date
+      ? new Date(new Date(date).getTime() + 60 * 60 * 1000).toISOString()
+      : undefined;
 
     // Création de la note
     await createNote({
+      type,
       title,
-      description,
-      start, // Peut être renommé en date
-      end,
+      // `description` reste accepte pour ne pas casser un appelant existant.
+      content: content ?? description ?? "",
+      startAt,
+      endAt,
     });
 
     return NextResponse.json({ message: "Note créée avec succès" });
