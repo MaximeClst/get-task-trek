@@ -127,9 +127,12 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
 
 ## 4. Dette et ménage
 
-- [ ] **Deux lockfiles** : `package-lock.json` **et** `pnpm-lock.yaml`. npm et pnpm ont tourné
-  tous les deux — c'est très probablement l'origine du `node_modules` corrompu qui produisait
-  ~40 fausses erreurs TypeScript. En choisir un, supprimer l'autre.
+- [x] **Deux lockfiles — réglé (PR `chore/un-seul-lockfile`).** `package-lock.json` supprimé,
+  `pnpm-lock.yaml` fait foi. Le premier était **périmé** : figé au commit initial, il annonçait
+  encore `@types/node@20.14.11`. Un build qui l'aurait choisi aurait installé un arbre de
+  dépendances désaccordé de `package.json` (voire échoué sur `npm ci`, qui exige la synchro).
+  Vérifié : `node_modules` supprimé puis `pnpm install --frozen-lockfile`, `tsc --noEmit` et
+  `pnpm build` repassent.
 - [ ] **Code mort** : `lib/createNote.ts` et `app/api/limitNote.ts` sont des handlers **Pages
   Router** posés dans `app/`, jamais routés. `User.notesCount` reste à 0 (le vrai quota est
   compté en base). L'enum `Plan` n'est jamais utilisé.
