@@ -1,5 +1,6 @@
 import TrekyRecorder from "@/app/components/TrekyRecorder";
 import { getAllCategories } from "@/lib/actionsCategories";
+import { lireUsage } from "@/lib/quotaTranscription";
 import { getUser } from "@/lib/session";
 
 // PAS de requirePremium() ici, et c'est voulu.
@@ -14,6 +15,7 @@ import { getUser } from "@/lib/session";
 // etait juste tant qu'elle contenait un "chat". Elle ne le serait plus ici.
 export default async function TrekyPage() {
   const [user, categories] = await Promise.all([getUser(), getAllCategories()]);
+  const usage = await lireUsage(user.id, user.isPremium);
 
   return (
     <section className="grid items-start gap-y-4">
@@ -27,12 +29,17 @@ export default async function TrekyPage() {
 
       <TrekyRecorder
         categories={categories.map(({ id, name }) => ({ id, name }))}
+        restantSecondes={usage.restantSecondes}
+        quotaSecondes={usage.quotaSecondes}
+        renouvelleLe={usage.renouvelleLe.toISOString()}
       />
 
       {!user.isPremium && (
         <p className="px-2 text-sm text-muted-foreground">
           Vous classez vos notes vous-même. Avec Premium, Treky choisit le type
-          et la catégorie à votre place.
+          et la catégorie à votre place — et vous passez à{" "}
+          {Math.round(usage.quotaSecondes / 60)} minutes de dictée par mois à
+          10 heures.
         </p>
       )}
     </section>

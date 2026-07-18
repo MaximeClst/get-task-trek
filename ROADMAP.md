@@ -131,9 +131,15 @@ ajouter au tri.
   arrêt automatique à **2 min**, plafond serveur de **8 Mo**, types MIME sur liste fermée, et
   **20 dictées/heure** par compte (~0,24 $/h au pire). La limite de durée côté client n'est pas
   une limite : la route est publique, tout est revérifié côté serveur.
-- [ ] **Plafond mensuel de transcription.** Le débit horaire empêche la rafale, pas la
-  consommation lente et continue — ni le multi-compte. À trancher : quota de minutes par mois,
-  ou coupure au-delà d'un seuil de coût.
+- [x] **Plafond mensuel de transcription (PR `feat/plafond-transcription`).** En **secondes
+  réelles**, pas en nombre d'appels : la durée vient de Whisper (`verbose_json`), donc de ce
+  qu'OpenAI facture — une durée annoncée par le navigateur serait déclarative.
+  **Free 30 min/mois** (~0,18 $), **Premium 10 h/mois** (~3,60 $ contre 15,99 € encaissés).
+  Ces deux nombres sont un arbitrage produit, pas une contrainte technique : ils se changent sur
+  une ligne dans `lib/quotaTranscription.ts`.
+  `isPremium` relu **en base**. Le refus tombe **avant** l'appel OpenAI (vérifié : 429 sans
+  aucune requête sortante). Dépassement possible borné à un enregistrement (2 min max), assumé.
+  Restant affiché en permanence dans l'écran Treky.
 
 ### 2.3 Tri (Premium)
 
