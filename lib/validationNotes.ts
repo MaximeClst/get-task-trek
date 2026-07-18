@@ -42,12 +42,22 @@ const dateString = z
 
 // Les dates sont optionnelles: une note simple n'en a pas. Elles ne devenaient
 // obligatoires que parce que l'ancien formulaire en envoyait toujours.
+// Chaine vide -> undefined: un <select> non renseigne envoie "", qui n'est pas
+// un identifiant. L'APPARTENANCE de cette categorie est verifiee separement,
+// dans l'action -- Zod ne peut valider qu'une forme, pas un proprietaire.
+const categoryId = z
+  .string()
+  .trim()
+  .transform((value) => value || undefined)
+  .optional();
+
 export const createNoteSchema = z.object({
   type: noteType.default("NOTE"),
   title,
   content,
   startAt: dateString.optional(),
   endAt: dateString.optional(),
+  categoryId,
 });
 
 export const updateNoteSchema = z.object({
@@ -56,6 +66,7 @@ export const updateNoteSchema = z.object({
   title,
   content,
   completed: z.boolean(),
+  categoryId,
 });
 
 // Un rendez-vous sans date de debut n'est pas un rendez-vous.

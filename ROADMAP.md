@@ -97,8 +97,12 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   **Migration écrite à la main** : le SQL généré par Prisma faisait les `DROP` avant les `CREATE`
   et aurait perdu les données. Ordre corrigé, reprise vérifiée.
   Le classement manuel (Free) est branché : sélecteur de type à la création et à l'édition.
-- [ ] **Catégories : le CRUD manuel manque.** Le modèle existe et les notes peuvent en porter une,
-  mais rien dans l'UI ne permet encore d'en créer. C'est le §2.4, désormais débloqué.
+- [x] **Catégories : CRUD manuel fait (PR `feat/crud-categories`).** Page `/dashboard/categories`
+  (créer, renommer, recolorier, supprimer) + affectation sur chaque note à la création et à
+  l'édition. Gratuit — c'est le Premium qui automatise l'attribution, pas l'existence.
+  **Le point qui comptait :** un `categoryId` venant du navigateur peut désigner la catégorie
+  d'un autre compte ; la clé étrangère ne vérifie que l'existence, pas le propriétaire.
+  `resolveCategoryId()` valide l'appartenance avant toute écriture. Vérifié.
 - [ ] **Supprimer l'assistant factice.** Le « chat » est un arbre de `if` + regex qui n'appelle
   **jamais** OpenAI. `handleCalendarRequest` existe en **trois** copies (`CalendarHandler.tsx:5`,
   `NoteHandler.tsx:73`). `NoteHandler.tsx:90` appelle `/api/calendar` et `CalendarHandler.tsx:46`
@@ -123,7 +127,7 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
 
 ### 2.4 Catégories manuelles (Free)
 
-- [ ] CRUD des catégories, et affectation à la main sur chaque note.
+- [x] CRUD des catégories, et affectation à la main sur chaque note. Fait — voir §2.1.
 
 ### 2.5 Google Calendar
 

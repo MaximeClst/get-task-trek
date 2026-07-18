@@ -18,6 +18,32 @@ import type { NoteType } from "@prisma/client";
 // porte son userId dans le WHERE de la requete -- jamais dans un test apres
 // coup, qui laisserait une fenetre entre la lecture et la verification.
 
+// Un categoryId arrive du navigateur: rien ne garantit qu'il designe une
+// categorie de CET utilisateur. Sans cette verification, n'importe qui pourrait
+// rattacher ses notes aux categories d'un autre compte -- la contrainte de cle
+// etrangere, elle, ne verifie que l'existence, pas le proprietaire.
+//
+// Le cout est d'un aller-retour, et seulement quand une categorie est choisie.
+async function resolveCategoryId(
+  categoryId: string | undefined,
+  userId: string,
+): Promise<string | null> {
+  if (!categoryId) return null;
+
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId, userId },
+    select: { id: true },
+  });
+
+  // Meme message que pour une categorie inexistante: distinguer les deux
+  // revelerait quelles categories existent chez les autres.
+  if (!category) {
+    throw new Error("Categorie introuvable.");
+  }
+
+  return category.id;
+}
+
 // Notes et Event ont fusionne: un rendez-vous est une note de type EVENT. Le
 // filtre par type est donc optionnel -- sans lui, on rend tout, ce que faisait
 // deja l'ancien getAllNotes.
@@ -39,12 +65,14 @@ export const createNote = async ({
   content,
   startAt,
   endAt,
+  categoryId,
 }: {
   type?: NoteType;
   title: string;
   content: string;
   startAt?: string;
   endAt?: string;
+  categoryId?: string;
 }) => {
   const user = await getUser();
 
@@ -56,6 +84,7 @@ export const createNote = async ({
     content,
     startAt,
     endAt,
+    categoryId,
   });
   if (!parsed.success) {
     throw new Error(firstError(parsed.error));
@@ -74,6 +103,11 @@ export const createNote = async ({
     );
   }
 
+  const safeCategoryId = await resolveCategoryId(
+    parsed.data.categoryId,
+    user.id,
+  );
+
   await prisma.note.create({
     data: {
       userId: user.id,
@@ -82,6 +116,7 @@ export const createNote = async ({
       content: parsed.data.content,
       startAt: parsed.data.startAt ? new Date(parsed.data.startAt) : null,
       endAt: parsed.data.endAt ? new Date(parsed.data.endAt) : null,
+      categoryId: safeCategoryId,
     },
   });
 
@@ -129,6 +164,7 @@ export const updateNote = async (formData: FormData) => {
     title: formData.get("title"),
     content: formData.get("content"),
     completed: formData.get("completed") === "on",
+    categoryId: formData.get("categoryId"),
   });
 
   if (!parsed.success) {
@@ -136,6 +172,10 @@ export const updateNote = async (formData: FormData) => {
   }
 
   const { id, type, title, content, completed } = parsed.data;
+  const safeCategoryId = await resolveCategoryId(
+    parsed.data.categoryId,
+    user.id,
+  );
 
   const { count } = await prisma.note.updateMany({
     where: { id, userId: user.id },
@@ -144,6 +184,7 @@ export const updateNote = async (formData: FormData) => {
       title,
       content,
       completed,
+      categoryId: safeCategoryId,
     },
   });
 

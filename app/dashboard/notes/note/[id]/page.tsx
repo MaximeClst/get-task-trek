@@ -14,6 +14,7 @@ import { CONTENT_MAX, TITLE_MAX } from "@/lib/validationNotes";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { getNote, updateNote } from "@/lib/actionsNotes";
+import { getAllCategories } from "@/lib/actionsCategories";
 import Link from "next/link";
 
 interface Params {
@@ -28,7 +29,12 @@ interface UpdatePageProps {
 }
 
 export default async function PageNote({ params }: UpdatePageProps) {
-  const note = await getNote(params.id);
+  // Les deux requetes partent ensemble: en serie elles couteraient deux
+  // allers-retours vers Frankfurt, soit ~600 ms depuis La Reunion.
+  const [note, categories] = await Promise.all([
+    getNote(params.id),
+    getAllCategories(),
+  ]);
 
   return (
     <Card>
@@ -52,6 +58,25 @@ export default async function PageNote({ params }: UpdatePageProps) {
               <option value="NOTE">Note</option>
               <option value="TASK">Tâche</option>
               <option value="EVENT">Rendez-vous</option>
+            </select>
+          </div>
+          <div className="gap-y-2 flex flex-col">
+            <Label htmlFor="categoryId">Catégorie</Label>
+            {/* getAllCategories filtre deja sur l'utilisateur: cette liste ne
+                contient que ses categories. L'action reverifie malgre tout
+                l'appartenance -- le <select> n'est pas une garantie. */}
+            <select
+              name="categoryId"
+              id="categoryId"
+              defaultValue={note?.categoryId ?? ""}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">Sans catégorie</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="gap-y-2 flex flex-col">
