@@ -31,6 +31,8 @@ export const RATE_LIMITS = {
   createNote: { limit: 30, windowSeconds: 60 },
   // Idem pour les rendez-vous (Premium).
   createEvent: { limit: 30, windowSeconds: 60 },
+  // On cree une categorie de temps en temps, pas en rafale.
+  createCategory: { limit: 20, windowSeconds: 60 },
   // Chaque appel declenche DEUX appels a l'API Stripe. Personne n'a besoin
   // d'ouvrir cinq tunnels de paiement par minute.
   createSubscription: { limit: 5, windowSeconds: 60 },

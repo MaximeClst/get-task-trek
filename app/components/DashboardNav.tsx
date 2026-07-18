@@ -1,5 +1,12 @@
 "use client";
-import { Bot, CalendarDays, Cog, CreditCard, NotebookPen } from "lucide-react";
+import {
+  Bot,
+  CalendarDays,
+  Cog,
+  CreditCard,
+  NotebookPen,
+  Tags,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +24,9 @@ export default function DashboardNav({ isPremium }: { isPremium: boolean }) {
 
   const menuDashboard = [
     { name: "Notes", icon: NotebookPen, path: "/dashboard/notes" },
+    // Les categories sont manuelles en Free: le lien n'est pas conditionne au
+    // Premium, contrairement a l'assistant et au calendrier.
+    { name: "Catégories", icon: Tags, path: "/dashboard/categories" },
     { name: "Settings", icon: Cog, path: "/dashboard/settings" },
     { name: "Price", icon: CreditCard, path: "/dashboard/payment" },
   ];

@@ -64,7 +64,16 @@ export default async function PageNotes() {
                       })}
                     </span>
                   )}
-                  {item.category && <span>· {item.category.name}</span>}
+                  {item.category && (
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: item.category.color }}
+                        aria-hidden
+                      />
+                      {item.category.name}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
