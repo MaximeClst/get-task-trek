@@ -5,11 +5,16 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import GoogleIcon from "../src/icons/GoogleIcon.svg";
 
-export default function ButtonsProvider() {
+// callbackUrl est deja filtre cote serveur par la page de connexion.
+export default function ButtonsProvider({
+  callbackUrl = "/dashboard/notes",
+}: {
+  callbackUrl?: string;
+}) {
   return (
     <div className="flex flex-col space-y-4">
       <Button
-        onClick={() => signIn("google", { callbackUrl: "/dashboard/notes" })}
+        onClick={() => signIn("google", { callbackUrl })}
         variant={"secondary"}
       >
         Continuer avec Google

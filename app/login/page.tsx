@@ -10,13 +10,33 @@ export const metadata: Metadata = {
   title: "Connexion — Task Trek",
 };
 
-export default async function LoginPage() {
+const DEFAULT_DESTINATION = "/dashboard/notes";
+
+// Le middleware place la page demandee dans ?callbackUrl. Elle vient de l'URL,
+// donc de l'utilisateur: on n'accepte qu'un chemin interne au dashboard.
+// Sans ce filtre, /login?callbackUrl=https://exemple.test ferait de la page de
+// connexion un tremplin vers un site tiers (open redirect) -- une adresse
+// d'apparence legitime qui atterrit ailleurs. Le "//" est refuse explicitement:
+// "//exemple.test" est un chemin en apparence, une URL absolue en pratique.
+function safeDestination(callbackUrl: string | undefined): string {
+  if (!callbackUrl) return DEFAULT_DESTINATION;
+  if (!callbackUrl.startsWith("/dashboard")) return DEFAULT_DESTINATION;
+  if (callbackUrl.startsWith("//")) return DEFAULT_DESTINATION;
+  return callbackUrl;
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: { callbackUrl?: string };
+}) {
   // Surtout pas getUser() ici: il redirige vers la connexion quand personne
   // n'est authentifie, ce qui boucle a l'infini sur la page de connexion.
   const session = await getServerSession(authOptions);
+  const destination = safeDestination(searchParams.callbackUrl);
 
   if (session?.user) {
-    redirect("/dashboard/notes");
+    redirect(destination);
   }
 
   return (
@@ -35,7 +55,7 @@ export default async function LoginPage() {
         Task Trek utilise votre compte Google pour synchroniser vos rendez-vous
         avec votre agenda.
       </p>
-      <ButtonsProvider />
+      <ButtonsProvider callbackUrl={destination} />
     </section>
   );
 }

@@ -38,8 +38,20 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   bout-en-bout avec de vrais événements Stripe (commit `85f6722`). Handlers `deleted`/`updated`
   ajoutés (le statut Stripe fait foi), `create` remplacé par `upsert` sur `userId`, table
   `ProcessedWebhookEvent` pour l'idempotence.
-- [ ] **`middleware.ts` absent.** `/dashboard/**` n'est protégé que par le `getUser()` de chaque
-  page : un oubli d'appel ouvre la page. À centraliser.
+- [x] **`middleware.ts` ajouté (PR `feat/middleware-dashboard`)** — avec une limite à connaître.
+  Les sessions sont **en base** (`PrismaAdapter` sans `strategy: "jwt"`) : le cookie ne porte
+  qu'un identifiant opaque, pas un JWT signé. Le middleware, sur l'Edge, ne peut donc ni le
+  vérifier (`withAuth`/`getToken` déchiffrent un JWT — ils rejetteraient *tout le monde*) ni lire
+  la base. Il ne fait que **constater la présence d'un cookie** : ça coupe le trafic anonyme avant
+  l'aller-retour Frankfurt, mais **ça ne valide rien**.
+
+  Au passage : la prémisse « un oubli de `getUser()` ouvre la page » était fausse — le
+  `layout.tsx` du dashboard appelle `getUser()` et couvre déjà toutes les pages enfants.
+  L'autorisation réelle reste dans les pages et les actions, comme avant.
+- [ ] **Validation de session dans le middleware.** Le seul moyen propre serait Next 15.2+, dont
+  le middleware peut tourner en runtime Node (donc lire la base). Passer aux sessions JWT ferait
+  l'affaire techniquement mais réintroduirait un `isPremium` figé dans le cookie — exactement le
+  bug que la PR `fix/premium-serveur` vient de corriger. À revoir lors du passage à Next 15.
 - [ ] **Suppression de compte cassée (RGPD).** `deleteUser()` ne supprime ni les `Notes` ni les
   `Event`, qui n'ont pas de `onDelete: Cascade` → erreur Prisma `P2003`. Tout utilisateur ayant
   au moins une note **ne peut pas supprimer son compte**.
