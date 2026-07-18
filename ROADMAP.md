@@ -103,13 +103,22 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   **Le point qui comptait :** un `categoryId` venant du navigateur peut désigner la catégorie
   d'un autre compte ; la clé étrangère ne vérifie que l'existence, pas le propriétaire.
   `resolveCategoryId()` valide l'appartenance avant toute écriture. Vérifié.
-- [ ] **Supprimer l'assistant factice.** Le « chat » est un arbre de `if` + regex qui n'appelle
-  **jamais** OpenAI. `handleCalendarRequest` existe en **trois** copies (`CalendarHandler.tsx:5`,
-  `NoteHandler.tsx:73`). `NoteHandler.tsx:90` appelle `/api/calendar` et `CalendarHandler.tsx:46`
-  appelle `/api/create-event` — **ces routes n'existent pas**. `ChatWindow.tsx` utilise
-  `useChat()` alors que `/api/chat` a été supprimée.
-- [ ] **Un seul SDK IA.** Trois installés (`openai`, `openai-edge`, `@ai-sdk/openai`) pour zéro
-  appel. Choisir, désinstaller les autres.
+- [x] **Assistant factice supprimé (PR `chore/supprime-faux-assistant`).** 420 lignes retirées :
+  le « chat » n'appelait jamais de modèle, postait vers `/api/create-event` et `/api/calendar`
+  (inexistantes) et son `useChat()` visait `/api/chat`, supprimée depuis. L'écran était cassé de
+  bout en bout. `/dashboard/assistant` porte désormais un placeholder, en attendant Treky.
+- [x] **Un seul SDK IA.** `ai`, `openai-edge` et `@ai-sdk/openai` désinstallés. Reste `openai`,
+  le SDK officiel, seul utilisé (`lib/openai.ts`).
+
+### 2.1 bis — Treky, l'assistant réel
+
+L'assistant s'appelle **Treky**, et ce n'est **pas un chat** : c'est la boucle centrale du
+produit — dicter → transcrire → classer. Un chat multiplierait les appels facturés sans rien
+ajouter au tri.
+
+- [ ] **Écran de dictée** : bouton d'enregistrement, minuterie, transcription affichée, puis
+  création de la note. Free et Premium partagent l'écran ; seul le remplissage du type et de la
+  catégorie change (manuel vs IA).
 
 ### 2.2 Dictée
 
