@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/app/src/components/ui/card";
 import { Input } from "@/app/src/components/ui/input";
-import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/validationNotes";
+import { CONTENT_MAX, TITLE_MAX } from "@/lib/validationNotes";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { getNote, updateNote } from "@/lib/actionsNotes";
@@ -40,6 +40,21 @@ export default async function PageNote({ params }: UpdatePageProps) {
         </CardHeader>
         <CardContent className="flex flex-col gap-y-5">
           <div className="gap-y-2 flex flex-col">
+            <Label htmlFor="type">Type</Label>
+            {/* Reclasser une note fait partie du tier gratuit: c'est ici qu'on
+                corrige une note qui aurait du etre une tache. */}
+            <select
+              name="type"
+              id="type"
+              defaultValue={note?.type ?? "NOTE"}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="NOTE">Note</option>
+              <option value="TASK">Tâche</option>
+              <option value="EVENT">Rendez-vous</option>
+            </select>
+          </div>
+          <div className="gap-y-2 flex flex-col">
             <Label htmlFor="title">Titre</Label>
             <Input
               defaultValue={note?.title as string}
@@ -52,13 +67,12 @@ export default async function PageNote({ params }: UpdatePageProps) {
             />
           </div>
           <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="title">Description</Label>
+            <Label htmlFor="content">Contenu</Label>
             <Textarea
-              defaultValue={note?.description as string}
-              name="description"
-              id="description"
-              required
-              maxLength={DESCRIPTION_MAX}
+              defaultValue={note?.content ?? ""}
+              name="content"
+              id="content"
+              maxLength={CONTENT_MAX}
               placeholder="...🖋️"
             />
           </div>

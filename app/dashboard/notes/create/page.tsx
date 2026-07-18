@@ -13,7 +13,8 @@ import { Input } from "@/app/src/components/ui/input";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { createNote } from "@/lib/actionsNotes";
-import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/validationNotes";
+import { CONTENT_MAX, TITLE_MAX } from "@/lib/validationNotes";
+import type { NoteType } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,17 +25,24 @@ export default function CreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  const [content, setContent] = useState("");
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
+  // En Free, le classement est MANUEL: c'est l'utilisateur qui choisit. En
+  // Premium, l'IA proposera ce type -- mais l'ecran reste le meme.
+  const [type, setType] = useState<NoteType>("NOTE");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const startParam = searchParams.get("start");
     const endParam = searchParams.get("end");
 
-    if (startParam) setStart(startParam);
-    if (endParam) setEnd(endParam);
+    // Arriver depuis le calendrier avec une date, c'est vouloir un rendez-vous.
+    if (startParam) {
+      setStartAt(startParam);
+      setType("EVENT");
+    }
+    if (endParam) setEndAt(endParam);
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,10 +50,12 @@ export default function CreatePage() {
     if (isSubmitting) return;
 
     const data = {
+      type,
       title: title,
-      description: description,
-      start: start,
-      end: end,
+      content: content,
+      // Chaine vide -> undefined: une note sans date ne doit pas envoyer "".
+      startAt: startAt || undefined,
+      endAt: endAt || undefined,
     };
 
     // isSubmitting desarme le bouton pendant l'aller-retour: sans lui, rien ne
@@ -76,6 +86,22 @@ export default function CreatePage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-y-5">
           <div className="gap-y-2 flex flex-col">
+            <Label htmlFor="type">Type</Label>
+            {/* Le classement manuel, c'est ce que fait le tier gratuit. En
+                Premium l'IA remplira ce champ a la place de l'utilisateur. */}
+            <select
+              name="type"
+              id="type"
+              value={type}
+              onChange={(e) => setType(e.target.value as NoteType)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="NOTE">Note</option>
+              <option value="TASK">Tâche</option>
+              <option value="EVENT">Rendez-vous</option>
+            </select>
+          </div>
+          <div className="gap-y-2 flex flex-col">
             <Label htmlFor="title">Titre</Label>
             {/* maxLength est un confort d'affichage: la limite qui compte est
                 celle de createNote, cote serveur. */}
@@ -91,38 +117,49 @@ export default function CreatePage() {
             />
           </div>
           <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="content">Contenu</Label>
             <Textarea
-              name="description"
-              id="description"
-              maxLength={DESCRIPTION_MAX}
+              name="content"
+              id="content"
+              maxLength={CONTENT_MAX}
               placeholder="...🖋️"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
           </div>
-          <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="start">Date de début</Label>
-            <Input
-              type="datetime-local"
-              name="start"
-              id="start"
-              required
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-            />
-          </div>
-          <div className="gap-y-2 flex flex-col">
-            <Label htmlFor="end">Date de fin</Label>
-            <Input
-              type="datetime-local"
-              name="end"
-              id="end"
-              required
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-            />
-          </div>
+          {/* Une note simple n'a pas de date: les champs n'apparaissent que
+              pour une tache (echeance) ou un rendez-vous. Ils etaient `required`
+              pour tout le monde, ce qui obligeait a dater une simple idee. */}
+          {type !== "NOTE" && (
+            <>
+              <div className="gap-y-2 flex flex-col">
+                <Label htmlFor="startAt">
+                  {type === "TASK" ? "Échéance" : "Date de début"}
+                </Label>
+                <Input
+                  type="datetime-local"
+                  name="startAt"
+                  id="startAt"
+                  required={type === "EVENT"}
+                  value={startAt}
+                  onChange={(e) => setStartAt(e.target.value)}
+                />
+              </div>
+              {type === "EVENT" && (
+                <div className="gap-y-2 flex flex-col">
+                  <Label htmlFor="endAt">Date de fin</Label>
+                  <Input
+                    type="datetime-local"
+                    name="endAt"
+                    id="endAt"
+                    required
+                    value={endAt}
+                    onChange={(e) => setEndAt(e.target.value)}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
         <CardFooter className="flex items-center justify-between">
           <Button

@@ -22,27 +22,21 @@ export async function DELETE(
   }
 
   try {
-    const event = await prisma.event.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
+    // deleteMany porte le userId DANS le WHERE, en une seule requete.
+    // L'ancienne version lisait avec findFirst({id, userId}) puis supprimait
+    // avec delete({id}) -- la suppression, elle, n'etait plus portee par le
+    // proprietaire. C'est le motif que la regle 1 du CLAUDE.md interdit.
+    // Au passage: un aller-retour au lieu de deux.
+    const { count } = await prisma.note.deleteMany({
+      where: { id, userId: session.user.id, type: "EVENT" },
     });
 
-    // Vérification de l'existence de l'événement
-    if (!event) {
+    if (count === 0) {
       return NextResponse.json(
         { error: "Événement introuvable" },
         { status: 404 }
       );
     }
-
-    // Suppression de l'événement
-    await prisma.event.delete({
-      where: {
-        id,
-      },
-    });
 
     return NextResponse.json({ message: "Événement supprimé avec succès" });
   } catch (error) {

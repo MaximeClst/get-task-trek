@@ -10,6 +10,7 @@ import {
   firstError,
 } from "./validationNotes";
 import { enforceRateLimit } from "./rateLimit";
+import type { NoteType } from "@prisma/client";
 
 // Une Server Action est un endpoint HTTP public: n'importe qui peut l'appeler
 // avec les arguments de son choix. Aucun identifiant venant du client n'est
@@ -17,11 +18,15 @@ import { enforceRateLimit } from "./rateLimit";
 // porte son userId dans le WHERE de la requete -- jamais dans un test apres
 // coup, qui laisserait une fenetre entre la lecture et la verification.
 
-export const getAllNotes = async () => {
+// Notes et Event ont fusionne: un rendez-vous est une note de type EVENT. Le
+// filtre par type est donc optionnel -- sans lui, on rend tout, ce que faisait
+// deja l'ancien getAllNotes.
+export const getAllNotes = async (type?: NoteType) => {
   const user = await getUser();
 
-  return prisma.notes.findMany({
-    where: { userId: user.id },
+  return prisma.note.findMany({
+    where: { userId: user.id, ...(type ? { type } : {}) },
+    include: { category: true },
     orderBy: {
       createdAt: "desc",
     },
@@ -29,21 +34,29 @@ export const getAllNotes = async () => {
 };
 
 export const createNote = async ({
+  type,
   title,
-  description,
-  start,
-  end,
+  content,
+  startAt,
+  endAt,
 }: {
+  type?: NoteType;
   title: string;
-  description: string;
-  start: string;
-  end: string;
+  content: string;
+  startAt?: string;
+  endAt?: string;
 }) => {
   const user = await getUser();
 
   // Valider AVANT de compter: inutile de payer un aller-retour vers Frankfurt
   // pour une saisie qu'on va refuser.
-  const parsed = createNoteSchema.safeParse({ title, description, start, end });
+  const parsed = createNoteSchema.safeParse({
+    type,
+    title,
+    content,
+    startAt,
+    endAt,
+  });
   if (!parsed.success) {
     throw new Error(firstError(parsed.error));
   }
@@ -51,7 +64,7 @@ export const createNote = async ({
   await enforceRateLimit("createNote", user.id);
 
   // Vérifier la limite de 10 notes
-  const userNotesCount = await prisma.notes.count({
+  const userNotesCount = await prisma.note.count({
     where: { userId: user.id },
   });
 
@@ -61,13 +74,14 @@ export const createNote = async ({
     );
   }
 
-  await prisma.notes.create({
+  await prisma.note.create({
     data: {
       userId: user.id,
+      type: parsed.data.type,
       title: parsed.data.title,
-      description: parsed.data.description,
-      start: new Date(parsed.data.start),
-      end: new Date(parsed.data.end),
+      content: parsed.data.content,
+      startAt: parsed.data.startAt ? new Date(parsed.data.startAt) : null,
+      endAt: parsed.data.endAt ? new Date(parsed.data.endAt) : null,
     },
   });
 
@@ -83,7 +97,7 @@ export const deleteNote = async (formData: FormData) => {
 
   // deleteMany porte le userId dans le WHERE: la note d'un autre ne
   // correspond a rien et reste intacte.
-  const { count } = await prisma.notes.deleteMany({
+  const { count } = await prisma.note.deleteMany({
     where: { id, userId: user.id },
   });
 
@@ -94,13 +108,15 @@ export const deleteNote = async (formData: FormData) => {
   }
 
   revalidatePath("/dashboard/notes");
+  revalidatePath("/dashboard/calendar");
 };
 
 export const getNote = async (id: string) => {
   const user = await getUser();
 
-  return prisma.notes.findFirst({
+  return prisma.note.findFirst({
     where: { id, userId: user.id },
+    include: { category: true },
   });
 };
 
@@ -109,8 +125,9 @@ export const updateNote = async (formData: FormData) => {
 
   const parsed = updateNoteSchema.safeParse({
     id: formData.get("id"),
+    type: formData.get("type"),
     title: formData.get("title"),
-    description: formData.get("description"),
+    content: formData.get("content"),
     completed: formData.get("completed") === "on",
   });
 
@@ -118,14 +135,15 @@ export const updateNote = async (formData: FormData) => {
     throw new Error(firstError(parsed.error));
   }
 
-  const { id, title, description, completed } = parsed.data;
+  const { id, type, title, content, completed } = parsed.data;
 
-  const { count } = await prisma.notes.updateMany({
+  const { count } = await prisma.note.updateMany({
     where: { id, userId: user.id },
     data: {
-      title: title,
-      description: description,
-      completed: completed,
+      type,
+      title,
+      content,
+      completed,
     },
   });
 
@@ -134,6 +152,7 @@ export const updateNote = async (formData: FormData) => {
   }
 
   revalidatePath("/dashboard/notes");
+  revalidatePath("/dashboard/calendar");
 
   // redirect() leve NEXT_REDIRECT: le laisser hors de tout try/catch/finally.
   redirect("/dashboard/notes");

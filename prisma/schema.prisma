@@ -20,10 +20,9 @@ model User {
   sessions         Session[]
   stripeCustomerId String?        @unique
   subscription     Subscription[]
-  notes            Notes[]
-  notesCount       Int            @default(0)
+  notes            Note[]
+  categories       Category[]
   isPremium        Boolean        @default(false)
-  Event            Event[]
 }
 
 model Account {
@@ -43,11 +42,6 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-}
-
-enum Plan {
-  BASIC
-  PREMIUM
 }
 
 model Session {
@@ -98,28 +92,57 @@ model ProcessedWebhookEvent {
   processedAt DateTime @default(now())
 }
 
-model Notes {
-  id          String    @id @unique @default(cuid())
-  title       String?
-  description String?
-  start       DateTime?
-  end         DateTime?
-  completed   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
+// Un rendez-vous n'est pas une entite separee: c'est une note de type EVENT qui
+// a ete projetee dans Google Calendar. D'ou la fusion des anciens modeles Notes
+// et Event en un seul, discrimine par `type`.
+enum NoteType {
+  NOTE
+  TASK
+  EVENT
 }
 
-model Event {
-  id          String    @id @default(uuid())
-  title       String
-  description String?
-  start       DateTime?
-  end         DateTime?
-  allDay      Boolean   @default(false)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+// La categorisation est le coeur du produit; elle n'avait pourtant aucun modele
+// en v1. En Free l'utilisateur cree ses categories a la main, en Premium l'IA
+// classe sur les categories EXISTANTES -- d'ou l'unicite (userId, name), qui
+// empeche un modele de recreer dix fois "Courses".
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#64748b")
+  notes     Note[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Note {
+  id             String    @id @default(cuid())
+  type           NoteType  @default(NOTE)
+  title          String
+  content        String?
+  startAt        DateTime?
+  endAt          DateTime?
+  allDay         Boolean   @default(false)
+  completed      Boolean   @default(false)
+  // Projection Google Calendar. null = pas encore pousse. La note est creee
+  // d'abord et poussee ensuite: un echec de push ne doit jamais la faire perdre.
+  googleEventId  String?
+  // Rend le cron de rappels idempotent: une tache deja notifiee est horodatee.
+  reminderSentAt DateTime?
+  classifiedByAi Boolean   @default(false)
+  // SetNull et non Cascade: supprimer une categorie ne doit pas emporter les
+  // notes qu'elle classait.
+  category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId     String?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, type])
+  @@index([startAt, reminderSentAt])
 }

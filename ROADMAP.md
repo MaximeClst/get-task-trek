@@ -89,10 +89,16 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
 
 ### 2.1 Fondations
 
-- [ ] **Modèle de données.** Fusionner `Notes` et `Event` en un `Note` discriminé par
-  `type` (`NOTE` / `TASK` / `EVENT`), avec `googleEventId` pour la projection Google. Ajouter
-  `Category` (n'existe pas, alors que la catégorisation est le cœur du produit). Schéma cible
-  dans `CLAUDE.md`.
+- [x] **Modèle de données — fusion faite (PR `feat/fusion-note-modele`).** `Notes` + `Event` →
+  un seul `Note` discriminé par `type`, avec `googleEventId`, `reminderSentAt`, `classifiedByAi`.
+  `Category` créé (`@@unique([userId, name])` pour que l'IA ne recrée pas dix fois « Courses » ;
+  `onDelete: SetNull` pour qu'effacer une catégorie ne détruise pas les notes).
+  `User.notesCount` et l'enum `Plan` supprimés.
+  **Migration écrite à la main** : le SQL généré par Prisma faisait les `DROP` avant les `CREATE`
+  et aurait perdu les données. Ordre corrigé, reprise vérifiée.
+  Le classement manuel (Free) est branché : sélecteur de type à la création et à l'édition.
+- [ ] **Catégories : le CRUD manuel manque.** Le modèle existe et les notes peuvent en porter une,
+  mais rien dans l'UI ne permet encore d'en créer. C'est le §2.4, désormais débloqué.
 - [ ] **Supprimer l'assistant factice.** Le « chat » est un arbre de `if` + regex qui n'appelle
   **jamais** OpenAI. `handleCalendarRequest` existe en **trois** copies (`CalendarHandler.tsx:5`,
   `NoteHandler.tsx:73`). `NoteHandler.tsx:90` appelle `/api/calendar` et `CalendarHandler.tsx:46`
