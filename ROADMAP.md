@@ -116,15 +116,24 @@ L'assistant s'appelle **Treky**, et ce n'est **pas un chat** : c'est la boucle c
 produit — dicter → transcrire → classer. Un chat multiplierait les appels facturés sans rien
 ajouter au tri.
 
-- [ ] **Écran de dictée** : bouton d'enregistrement, minuterie, transcription affichée, puis
-  création de la note. Free et Premium partagent l'écran ; seul le remplissage du type et de la
-  catégorie change (manuel vs IA).
+- [x] **Écran de dictée fait (PR `feat/treky-dictee`).** `/dashboard/treky` : enregistrement,
+  minuterie avec arrêt automatique à 2 min, transcription Whisper, relecture, puis création de la
+  note. **Ouvert à tous, Free inclus** — l'ancienne page `/dashboard/assistant` était gardée par
+  `requirePremium()`, ce qui n'était plus correct : la transcription est le seul appel IA du tier
+  gratuit. La garde Premium se déplace sur le tri, pas sur la dictée.
+  Vérifié bout en bout, y compris un vrai appel Whisper.
 
 ### 2.2 Dictée
 
-- [ ] **Enregistrement audio** dans le navigateur.
-- [ ] **Transcription Whisper** — pour tous, Free inclus. Seul appel IA du tier gratuit,
-  donc **il te coûte de l'argent** (~0,006 $/min) : prévoir un garde-fou de durée.
+- [x] **Enregistrement audio** dans le navigateur — `MediaRecorder`, format négocié selon le
+  navigateur (webm sur Chrome/Firefox, mp4 sur Safari), micro relâché au démontage.
+- [x] **Transcription Whisper** — `/api/transcribe`, ouverte à tous. Garde-fous en place :
+  arrêt automatique à **2 min**, plafond serveur de **8 Mo**, types MIME sur liste fermée, et
+  **20 dictées/heure** par compte (~0,24 $/h au pire). La limite de durée côté client n'est pas
+  une limite : la route est publique, tout est revérifié côté serveur.
+- [ ] **Plafond mensuel de transcription.** Le débit horaire empêche la rafale, pas la
+  consommation lente et continue — ni le multi-compte. À trancher : quota de minutes par mois,
+  ou coupure au-delà d'un seuil de coût.
 
 ### 2.3 Tri (Premium)
 

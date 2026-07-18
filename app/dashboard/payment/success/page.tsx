@@ -23,7 +23,7 @@ export default function SuccessPage() {
           </Link>
           <Link
             className={buttonVariants({ size: "sm" })}
-            href="/dashboard/assistant"
+            href="/dashboard/treky"
           >
             Go parler à Ai Assistant
           </Link>

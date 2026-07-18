@@ -1,9 +1,9 @@
 "use client";
 import {
-  Bot,
   CalendarDays,
   Cog,
   CreditCard,
+  Mic,
   NotebookPen,
   Tags,
 } from "lucide-react";
@@ -18,14 +18,17 @@ import { usePathname } from "next/navigation";
 // valeur en prop ne coute aucun aller-retour supplementaire.
 //
 // A noter: ce n'est toujours que du confort d'affichage. Le controle d'acces
-// reel est requirePremium() sur /dashboard/assistant et /dashboard/calendar.
+// reel est requirePremium() sur /dashboard/calendar.
 export default function DashboardNav({ isPremium }: { isPremium: boolean }) {
   const pathname = usePathname();
 
   const menuDashboard = [
+    // Treky (dictee) est ouvert a TOUS: la transcription est le seul appel IA
+    // du tier gratuit. Seul le calendrier reste derriere le Premium.
+    { name: "Treky", icon: Mic, path: "/dashboard/treky" },
     { name: "Notes", icon: NotebookPen, path: "/dashboard/notes" },
     // Les categories sont manuelles en Free: le lien n'est pas conditionne au
-    // Premium, contrairement a l'assistant et au calendrier.
+    // Premium non plus.
     { name: "Catégories", icon: Tags, path: "/dashboard/categories" },
     { name: "Settings", icon: Cog, path: "/dashboard/settings" },
     { name: "Price", icon: CreditCard, path: "/dashboard/payment" },
@@ -52,24 +55,13 @@ export default function DashboardNav({ isPremium }: { isPremium: boolean }) {
 
       {/* Confort d'affichage uniquement: on masque les liens Premium aux comptes
           gratuits. Le vrai controle d'acces est cote serveur (requirePremium sur
-          les pages /dashboard/assistant et /dashboard/calendar). */}
+          la page /dashboard/calendar).
+          Treky n'est plus ici: la dictee est ouverte a tous. */}
       <div
         className={`${
           isPremium ? "flex" : "hidden"
         } md:flex-col md:h-full md:w-16 w-full lg:w-40 gap-2`}
       >
-        <Link href="/dashboard/assistant">
-          <div
-            className={`flex items-center justify-center lg:justify-start gap-2 cursor-pointer lg:p-3 p-2 hover:bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:bg-opacity-50 hover:text-white text-sm font-bold rounded-md ${
-              pathname.startsWith("/dashboard/assistant") &&
-              "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white"
-            }`}
-          >
-            <Bot className="w-4" />
-            <span className="hidden lg:block">AI Assistant</span>
-          </div>
-        </Link>
-
         <Link href="/dashboard/calendar">
           <div
             className={`flex items-center justify-center lg:justify-start gap-2 cursor-pointer lg:p-3 p-2 hover:bg-gradient-to-r from-fuchsia-600 to-cyan-600 hover:bg-opacity-50 hover:text-white text-sm font-bold rounded-md ${
