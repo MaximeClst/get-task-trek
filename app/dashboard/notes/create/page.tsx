@@ -13,6 +13,7 @@ import { Input } from "@/app/src/components/ui/input";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { createNote } from "@/lib/actionsNotes";
+import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/validationNotes";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -76,11 +77,14 @@ export default function CreatePage() {
         <CardContent className="flex flex-col gap-y-5">
           <div className="gap-y-2 flex flex-col">
             <Label htmlFor="title">Titre</Label>
+            {/* maxLength est un confort d'affichage: la limite qui compte est
+                celle de createNote, cote serveur. */}
             <Input
               type="text"
               name="title"
               id="title"
               required
+              maxLength={TITLE_MAX}
               placeholder="Titre de la note"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -91,6 +95,7 @@ export default function CreatePage() {
             <Textarea
               name="description"
               id="description"
+              maxLength={DESCRIPTION_MAX}
               placeholder="...🖋️"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
