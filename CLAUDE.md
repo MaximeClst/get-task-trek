@@ -277,8 +277,14 @@ implicitement par NextAuth et Prisma) mais sont requises — un `grep process.en
 pnpm install --frozen-lockfile
 npx prisma generate            # sinon: types Prisma manquants → faux TS7006
 node node_modules/typescript/lib/tsc.js --noEmit   # npx tsc ne marche pas (paquet "tsc" pirate)
-pnpm build
+NEXT_DIST_DIR=.next-verify pnpm build              # voir ci-dessous
 ```
+
+⚠️ **Ne jamais lancer `pnpm build` nu pendant que `next dev` tourne.** Les deux écrivent dans
+`.next/` : le build écrase les chunks servis par le serveur de dev, et **la page perd son CSS**
+jusqu'au prochain rechargement complet. Le symptôme ressemble à un bug Tailwind, n'en est pas.
+D'où `NEXT_DIST_DIR`, qui isole les builds de vérification (`next.config.mjs`). Vercel ne définit
+pas cette variable et retombe sur `.next/`.
 
 ⚠️ **Piège vécu :** un `node_modules` corrompu produit ~40 **fausses** erreurs TypeScript
 (« Property 'children' does not exist… », `TS7006`). Ce n'est pas le code. Réinstaller et
