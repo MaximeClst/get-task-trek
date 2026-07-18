@@ -1,15 +1,19 @@
 "use client";
 import { Bot, CalendarDays, Cog, CreditCard, NotebookPen } from "lucide-react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function DashboardNav() {
+// isPremium arrive du layout, qui le tient de getUser() -- donc de la BASE.
+// Auparavant ce composant le lisait via useSession(), c'est-a-dire depuis le
+// client: la valeur restait celle du cookie tant que la session n'etait pas
+// rafraichie, et les onglets pouvaient rester masques apres un paiement.
+// Le layout appelle deja getUser(), qui est enveloppe dans cache(): passer la
+// valeur en prop ne coute aucun aller-retour supplementaire.
+//
+// A noter: ce n'est toujours que du confort d'affichage. Le controle d'acces
+// reel est requirePremium() sur /dashboard/assistant et /dashboard/calendar.
+export default function DashboardNav({ isPremium }: { isPremium: boolean }) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-
-  // Gestion de la session pour vérifier si l'utilisateur est premium
-  if (status === "loading") return <div>Chargement...</div>;
 
   const menuDashboard = [
     { name: "Notes", icon: NotebookPen, path: "/dashboard/notes" },
@@ -41,7 +45,7 @@ export default function DashboardNav() {
           les pages /dashboard/assistant et /dashboard/calendar). */}
       <div
         className={`${
-          session?.user?.isPremium ? "flex" : "hidden"
+          isPremium ? "flex" : "hidden"
         } md:flex-col md:h-full md:w-16 w-full lg:w-40 gap-2`}
       >
         <Link href="/dashboard/assistant">

@@ -37,7 +37,7 @@ export default async function DashboardLayout({
 
   return (
     <section className="max-w-[1200px] mx-auto md:flex md:items-center md:gap-4 h-screen w-full mt-2 p-2">
-      <DashboardNav />
+      <DashboardNav isPremium={user.isPremium} />
       <div className="w-full h-full">
         <ButtonSignOut />
         {children}
