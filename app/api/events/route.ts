@@ -1,5 +1,6 @@
 import { authOptions } from "@/lib/AuthOptions";
 import { prisma } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
@@ -52,6 +53,16 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await requirePremiumUser();
   if ("error" in auth) return auth.error;
+
+  // Une route HTTP repond 429 avec Retry-After, plutot que de lever: c'est ce
+  // que le client attend, et ca lui dit quand revenir.
+  const rate = await checkRateLimit("createEvent", auth.userId);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessayez dans un instant." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
+    );
+  }
 
   try {
     const { title, description, start, end, allDay } = await req.json();

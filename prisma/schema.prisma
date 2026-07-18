@@ -79,6 +79,17 @@ model Subscription {
   userId               String   @unique
 }
 
+// Limitation de debit, fenetre fixe. Une ligne par couple (action, utilisateur),
+// mise a jour en place -- la table ne grossit donc pas avec le trafic, seulement
+// avec le nombre d'utilisateurs.
+model RateLimit {
+  key         String   @id // "<action>:<userId>"
+  count       Int
+  windowStart DateTime
+
+  @@index([windowStart])
+}
+
 // Idempotence du webhook Stripe: Stripe rejoue ses evenements (retries,
 // pannes reseau). On enregistre chaque event.id traite pour ne pas le rejouer.
 model ProcessedWebhookEvent {
