@@ -33,6 +33,17 @@ export const updateUser = async (formData: FormData) => {
   }
 };
 
+// Une seule suppression: toutes les relations vers User portent desormais
+// onDelete: Cascade, Postgres se charge du reste.
+//
+// Cette action enumerait auparavant les tables a vider a la main -- et en
+// oubliait deux, Notes et Event. Resultat: tout utilisateur ayant au moins une
+// note se prenait un P2003 et ne pouvait PAS supprimer son compte. C'est un
+// enjeu RGPD, pas un confort.
+//
+// La liste manuelle etait le bug: elle demandait qu'on pense a la mettre a jour
+// a chaque nouveau modele. La cascade, elle, est declaree a cote de la relation
+// et ne peut pas etre oubliee.
 export const deleteUser = async () => {
   try {
     const session = await getServerSession(authOptions);
@@ -40,23 +51,8 @@ export const deleteUser = async () => {
       throw new Error("User not authenticated");
     }
 
-    const userId = session.user.id as string;
-
-    // Delete related data in a specific order
-    await prisma.subscription.deleteMany({
-      where: { userId },
-    });
-
-    await prisma.session.deleteMany({
-      where: { userId },
-    });
-
-    await prisma.account.deleteMany({
-      where: { userId },
-    });
-
     await prisma.user.delete({
-      where: { id: userId },
+      where: { id: session.user.id as string },
     });
 
     revalidatePath("/");
