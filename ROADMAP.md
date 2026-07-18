@@ -61,6 +61,14 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   sans `P2003`, zéro ligne orpheline.
 - [x] **`lib/rateLimiter.ts` supprimé**, et `express-rate-limit` désinstallé. Importé nulle part,
   et incompatible avec l'App Router de toute façon.
+- [x] **Contournement du quota Free — corrigé (PR `fix/limites-saisie`).** `addNoteToCalendar`
+  créait une note **sans vérifier le plafond de 10**, n'était appelée par aucun code, mais était
+  exportée d'un fichier `"use server"` — donc joignable en HTTP. Supprimée. `createNote` reste le
+  seul chemin d'écriture, et il compte.
+- [x] **Limites de taille des saisies (PR `fix/limites-saisie`).** Aucune n'existait : le quota
+  compte des *lignes*, pas des *octets*, donc dix notes suffisaient à stocker des gigaoctets.
+  Validation Zod côté serveur dans `lib/validationNotes.ts` (titre 200, description 10 000,
+  dates réelles), `maxLength` côté formulaire pour l'affichage seulement.
 - [ ] **Limitation de débit — reste à faire.** Le fichier supprimé ne protégeait rien, mais le
   besoin est réel dès que les endpoints IA existeront (Whisper coûte de l'argent, sur le tier
   gratuit). À traiter avec une solution compatible Edge/serverless, pas un middleware Express.
@@ -140,9 +148,12 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   dépendances désaccordé de `package.json` (voire échoué sur `npm ci`, qui exige la synchro).
   Vérifié : `node_modules` supprimé puis `pnpm install --frozen-lockfile`, `tsc --noEmit` et
   `pnpm build` repassent.
-- [ ] **Code mort** : `lib/createNote.ts` et `app/api/limitNote.ts` sont des handlers **Pages
-  Router** posés dans `app/`, jamais routés. `User.notesCount` reste à 0 (le vrai quota est
-  compté en base). L'enum `Plan` n'est jamais utilisé.
+- [x] **Code mort — `lib/createNote.ts` et `app/api/limitNote.ts` supprimés** (PR
+  `fix/limites-saisie`). Handlers Pages Router jamais routés, mais qui portaient une logique de
+  quota **concurrente** fondée sur `notesCount`.
+- [ ] **`User.notesCount` et l'enum `Plan`** restent à supprimer (migration). `notesCount` n'a
+  plus aucun lecteur depuis la suppression ci-dessus. À faire avec la fusion `Notes`/`Event`,
+  pour ne pas multiplier les migrations sur des tables destinées à changer.
 - [ ] **`event-utils.ts`** génère des identifiants avec `Math.random()` sur 1M → collisions.
 - [ ] **`getUser()` fait un aller-retour de trop** : `getServerSession` a déjà chargé la ligne
   utilisateur via l'adaptateur Prisma, et `getUser` refait un `findUnique`.

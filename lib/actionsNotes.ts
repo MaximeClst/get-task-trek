@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "./session";
 import { prisma } from "./db";
+import {
+  createNoteSchema,
+  updateNoteSchema,
+  firstError,
+} from "./validationNotes";
 
 // Une Server Action est un endpoint HTTP public: n'importe qui peut l'appeler
 // avec les arguments de son choix. Aucun identifiant venant du client n'est
@@ -35,6 +40,13 @@ export const createNote = async ({
 }) => {
   const user = await getUser();
 
+  // Valider AVANT de compter: inutile de payer un aller-retour vers Frankfurt
+  // pour une saisie qu'on va refuser.
+  const parsed = createNoteSchema.safeParse({ title, description, start, end });
+  if (!parsed.success) {
+    throw new Error(firstError(parsed.error));
+  }
+
   // Vérifier la limite de 10 notes
   const userNotesCount = await prisma.notes.count({
     where: { userId: user.id },
@@ -49,10 +61,10 @@ export const createNote = async ({
   await prisma.notes.create({
     data: {
       userId: user.id,
-      title: title,
-      description: description,
-      start: new Date(start),
-      end: new Date(end),
+      title: parsed.data.title,
+      description: parsed.data.description,
+      start: new Date(parsed.data.start),
+      end: new Date(parsed.data.end),
     },
   });
 
@@ -92,17 +104,25 @@ export const getNote = async (id: string) => {
 export const updateNote = async (formData: FormData) => {
   const user = await getUser();
 
-  const id = formData.get("id") as string;
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const completed = formData.get("completed");
+  const parsed = updateNoteSchema.safeParse({
+    id: formData.get("id"),
+    title: formData.get("title"),
+    description: formData.get("description"),
+    completed: formData.get("completed") === "on",
+  });
+
+  if (!parsed.success) {
+    throw new Error(firstError(parsed.error));
+  }
+
+  const { id, title, description, completed } = parsed.data;
 
   const { count } = await prisma.notes.updateMany({
     where: { id, userId: user.id },
     data: {
       title: title,
       description: description,
-      completed: completed === "on",
+      completed: completed,
     },
   });
 
@@ -116,24 +136,10 @@ export const updateNote = async (formData: FormData) => {
   redirect("/dashboard/notes");
 };
 
-export async function addNoteToCalendar({
-  title,
-  description,
-  time,
-}: {
-  title: string;
-  description: string;
-  time: string;
-}) {
-  const user = await getUser();
-
-  await prisma.notes.create({
-    data: {
-      userId: user.id,
-      title: title,
-      description: `${description} - Planifié pour ${time}`,
-    },
-  });
-
-  revalidatePath("/dashboard/notes");
-}
+// addNoteToCalendar a ete supprimee ici. Elle creait une note SANS verifier le
+// quota de 10, et n'etait appelee par aucun code -- mais exportee depuis un
+// fichier "use server", donc joignable en HTTP par n'importe qui. C'etait un
+// contournement complet du plafond gratuit, accessible en une requete.
+//
+// Si un jour l'assistant a besoin de creer une note, il passe par createNote(),
+// qui compte. Ne pas reintroduire de chemin d'ecriture parallele.

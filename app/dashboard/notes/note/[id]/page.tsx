@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/app/src/components/ui/card";
 import { Input } from "@/app/src/components/ui/input";
+import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/validationNotes";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { getNote, updateNote } from "@/lib/actionsNotes";
@@ -46,6 +47,7 @@ export default async function PageNote({ params }: UpdatePageProps) {
               name="title"
               id="title"
               required
+              maxLength={TITLE_MAX}
               placeholder="Titre de la note"
             />
           </div>
@@ -56,6 +58,7 @@ export default async function PageNote({ params }: UpdatePageProps) {
               name="description"
               id="description"
               required
+              maxLength={DESCRIPTION_MAX}
               placeholder="...🖋️"
             />
           </div>
