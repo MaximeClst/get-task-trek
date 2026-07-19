@@ -155,11 +155,32 @@ ajouter au tri.
 
 ### 2.5 Google Calendar
 
-- [ ] **Scope `calendar.events`** à ajouter au provider Google.
-- [ ] **Refresh des tokens** : les `access_token` expirent. Les credentials sont déjà dans le
-  modèle `Account` (`refresh_token`, `access_token`, `scope`) — ne pas créer de table parallèle.
-- [ ] **Push des rendez-vous.** Un échec de push ne doit **jamais** faire perdre la note : créer
-  la note d'abord, pousser ensuite.
+- [x] **Scope `calendar.events` ajouté (PR `feat/google-calendar`)**, avec
+  `access_type: "offline"` (sans quoi Google ne délivre **aucun** `refresh_token`) et
+  `prompt: "consent"` (sans quoi seuls les *futurs* inscrits en recevraient un — Google ne le
+  renvoie qu'au tout premier consentement). Coût assumé : un écran d'autorisation à chaque
+  connexion.
+  **Piège corrigé au passage :** NextAuth v4 ne met **pas** à jour un `Account` déjà lié — à la
+  reconnexion il trouve le compte et ouvre la session sans réécrire les tokens. Le nouveau
+  `scope` aurait été jeté. Un callback `signIn` les réécrit.
+- [x] **Refresh des tokens (PR `feat/google-calendar`).** `lib/google.ts`, sans SDK : le paquet
+  `googleapis` pèse ~50 Mo pour trois endpoints REST. Rafraîchissement avec marge de 60 s,
+  persistance immédiate, et un `refresh_token` existant n'est **jamais** écrasé par un
+  `undefined` (Google n'en renvoie pas systématiquement — le perdre couperait l'accès sans retour
+  possible). Credentials lus depuis `Account`, pas de table parallèle.
+- [x] **Push des rendez-vous (PR `feat/google-calendar`).** La note est écrite **d'abord**, poussée
+  ensuite, et `pousserSiPremium` avale ses erreurs : un agenda indisponible ne coûte jamais sa
+  note à l'utilisateur. Push automatique en Premium, bouton manuel pour tous (la frontière porte
+  sur l'automatisation, pas sur la fonctionnalité). Idempotent : rappelé sur une note déjà
+  poussée, il met à jour au lieu de créer un doublon. Suppression et renommage d'un rendez-vous
+  sont répercutés dans l'agenda.
+  **Le bug qui ne se voit qu'à l'usage :** sur un événement « toute la journée », la date de fin
+  de Google est **exclusive**, alors que notre `endAt` vaut 23:59 le même jour. Recopiée telle
+  quelle, elle produisait un événement de durée nulle, absent de l'agenda. Couvert par des tests.
+- [ ] **Restant : activer le scope dans la Google Cloud Console.** Le code le demande, mais tant
+  que `calendar.events` n'est pas déclaré sur l'écran de consentement OAuth, Google refusera.
+  Étape manuelle, à faire avant de tester.
+- [ ] **Restant : vérification bout-en-bout** avec un vrai compte Google et un vrai agenda.
 
 ### 2.6 Rappels e-mail (Premium)
 

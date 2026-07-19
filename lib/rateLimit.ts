@@ -38,6 +38,10 @@ export const RATE_LIMITS = {
   // compte a ~0,24 $/h dans le pire des cas. Fenetre horaire et non minute:
   // c'est la consommation cumulee qui coute, pas la rafale.
   transcribe: { limit: 20, windowSeconds: 3600 },
+  // Push et retrait au calendrier. Chaque appel part chez Google, qui applique
+  // ses propres quotas par projet: se faire limiter par Google penaliserait
+  // TOUS nos utilisateurs, pas seulement celui qui martele.
+  calendrier: { limit: 30, windowSeconds: 60 },
   // Chaque appel declenche DEUX appels a l'API Stripe. Personne n'a besoin
   // d'ouvrir cinq tunnels de paiement par minute.
   createSubscription: { limit: 5, windowSeconds: 60 },
