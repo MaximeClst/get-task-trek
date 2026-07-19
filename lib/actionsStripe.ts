@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { abonnementActifChezStripe } from "./abonnement";
 import { getUser } from "./session";
 import { prisma } from "./db";
 import { stripe } from "./stripe";
@@ -57,6 +58,21 @@ export const createSubscription = async () => {
 
     if (!dbUser?.stripeCustomerId) {
       throw new Error("User does not have a stripeCustomerId");
+    }
+
+    // Stripe n'empeche PAS de souscrire deux fois au meme prix: rien, chez lui,
+    // ne dit qu'un client ne peut avoir qu'un abonnement. Sans ce garde, un
+    // utilisateur dont l'acces n'a pas ete active -- webhook manque, par
+    // exemple -- repaie en croyant que ca n'a pas marche, et se retrouve
+    // preleve deux fois. C'est arrive.
+    //
+    // On interroge Stripe et non notre base: c'est justement quand notre base
+    // est desynchronisee que ce garde sert a quelque chose.
+    const dejaAbonne = await abonnementActifChezStripe(dbUser.stripeCustomerId);
+    if (dejaAbonne) {
+      throw new Error(
+        "Vous avez déjà un abonnement actif. Rechargez la page ; si le problème persiste, ouvrez la gestion de votre abonnement.",
+      );
     }
 
     const priceId = process.env.STRIPE_PRICE_ID_MONTHLY;

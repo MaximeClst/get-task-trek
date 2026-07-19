@@ -213,6 +213,15 @@ ajouter au tri.
 - [ ] **Stripe en live.** Les `Price` actuels sont en test. Créer les `Price` live (nouveaux
   IDs), un endpoint webhook de production (nouveau `whsec_`), et vérifier que clé et prix sont
   dans le **même mode**.
+- [ ] **Aucun endpoint webhook n'est enregistré chez Stripe, même en test** (constaté le
+  2026-07-19 : `GET /v1/webhook_endpoints` renvoie une liste vide). Les événements traités
+  jusqu'ici venaient tous d'une session `stripe listen` du CLI. Conséquence vécue : un paiement
+  réel n'a jamais activé le Premium, et l'utilisateur a repayé — **deux abonnements actifs sur
+  le même client**. La page de retour de paiement réconcilie désormais avec Stripe
+  (PR `fix/abonnement-non-synchronise`), mais ça reste un filet, pas le chemin normal.
+  **En développement**, le webhook n'arrive que si `stripe listen --forward-to
+  localhost:3000/api/webhook/stripe` tourne, ET que `STRIPE_WEBHOOK_SECRET` vaut le `whsec_`
+  imprimé par cette commande — sinon la signature est rejetée en 400.
 - [ ] **Nettoyer l'environnement Vercel.** Il date de 717 jours et ne déploiera rien de
   fonctionnel : `DATABASE_URL` pointe sur l'Aiven **supprimée** (DNS mort), `GITHUB_ID`/`SECRET`
   et `STRIPE_API_ID` n'existent plus dans le code. Ajouter les nouvelles variables.
