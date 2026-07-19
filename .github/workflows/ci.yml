@@ -1,0 +1,79 @@
+name: CI
+
+# Sur les PR vers dev et main, et sur les pousses directes vers ces branches
+# (dev en recoit via les merges de PR).
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+# Une PR poussee trois fois de suite ne doit pas lancer trois CI: seule la
+# derniere version compte.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+
+    # Des valeurs bidon suffisent: aucune etape ne joint un service reel. Le
+    # build de Next lit ces variables au chargement des modules (le SDK Stripe
+    # refuse de s'instancier sans cle), mais n'ouvre aucune connexion.
+    #
+    # Ne JAMAIS mettre de vraies cles ici: ce fichier est public, et les logs
+    # d'Actions le sont aussi sur un depot public.
+    env:
+      STRIPE_KEY_SECRET: sk_test_bidon
+      STRIPE_WEBHOOK_SECRET: whsec_bidon
+      STRIPE_PRICE_ID_MONTHLY: price_bidon
+      GOOGLE_CLIENT_ID: client-bidon
+      GOOGLE_CLIENT_SECRET: secret-bidon
+      OPENAI_API_KEY: sk-bidon
+      NEXT_PUBLIC_DOMAIN_URL: http://localhost:3000
+      # Ces trois-la n'apparaissent nulle part dans le code -- NextAuth et
+      # Prisma les lisent implicitement -- mais elles sont requises. Un
+      # `grep process.env` les rate.
+      NEXTAUTH_SECRET: secret-bidon
+      NEXTAUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://bidon:bidon@localhost:5432/bidon
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Avant setup-node: c'est pnpm qui fournit le cache que setup-node
+      # utilisera ensuite. La version vient du champ packageManager.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Aligne sur engines.node du package.json.
+          node-version: 24.x
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # pnpm n'execute pas les scripts d'installation de Prisma: sans cette
+      # etape, les types generes manquent et tsc rend une quarantaine de
+      # fausses erreurs (TS7006, "Property 'children' does not exist").
+      - name: Generer le client Prisma
+        run: pnpm exec prisma generate
+
+      - run: pnpm lint
+
+      # npx tsc ne marche pas ici: le paquet "tsc" du registre npm n'est pas
+      # TypeScript. On appelle le binaire installe.
+      - name: Verifier les types
+        run: node node_modules/typescript/lib/tsc.js --noEmit
+
+      - run: pnpm test
+
+      # NEXT_DIST_DIR isole ce build de .next/ (voir next.config.mjs). Inutile
+      # en CI, ou rien d'autre ne tourne, mais on garde la meme commande qu'en
+      # local: une commande de verification qui differe est une commande qui
+      # ment.
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_DIST_DIR: .next-verify
