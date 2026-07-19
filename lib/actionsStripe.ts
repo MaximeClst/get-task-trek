@@ -6,28 +6,23 @@ import { prisma } from "./db";
 import { stripe } from "./stripe";
 import { enforceRateLimit } from "./rateLimit";
 
-export const getDataStripeUser = async (userId: string) => {
+// L'userId n'est PLUS un argument. Cette fonction est exportee d'un fichier
+// "use server": c'etait donc un endpoint HTTP public qui rendait le statut
+// d'abonnement ET le stripeCustomerId de n'importe quel compte, a qui savait
+// deviner un identifiant. C'est la regle 1 du CLAUDE.md, et le genre de faille
+// qui a coule la v1. L'utilisateur est resolu ici, en interne.
+export const getDataStripeUser = async () => {
+  const user = await getUser();
+
   try {
-    const data = await prisma.subscription.findUnique({
+    return await prisma.subscription.findUnique({
       where: {
-        userId: userId,
+        userId: user.id,
       },
       select: {
         status: true,
-        user: {
-          select: {
-            stripeCustomerId: true,
-          },
-        },
       },
     });
-
-    if (!data) {
-      console.warn(`No subscription data found for userId: ${userId}`);
-      return null;
-    }
-
-    return data;
   } catch (error) {
     console.error("Error fetching Stripe user data:", error);
     throw error;

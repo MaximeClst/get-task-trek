@@ -68,6 +68,7 @@ export const createNote = async ({
   startAt,
   endAt,
   categoryId,
+  classifiedByAi,
 }: {
   type?: NoteType;
   title: string;
@@ -75,6 +76,7 @@ export const createNote = async ({
   startAt?: string;
   endAt?: string;
   categoryId?: string;
+  classifiedByAi?: boolean;
 }) => {
   const user = await getUser();
 
@@ -119,6 +121,11 @@ export const createNote = async ({
       startAt: parsed.data.startAt ? new Date(parsed.data.startAt) : null,
       endAt: parsed.data.endAt ? new Date(parsed.data.endAt) : null,
       categoryId: safeCategoryId,
+      // Le drapeau vient du client, donc il ne prouve rien: on le croise avec
+      // isPremium, lu en base. Un compte gratuit n'a pas pu faire trier sa note
+      // -- l'action de tri le refuse -- donc il ne peut pas le pretendre ici.
+      // C'est un indicateur d'usage, pas un droit d'acces.
+      classifiedByAi: Boolean(classifiedByAi) && user.isPremium,
     },
   });
 

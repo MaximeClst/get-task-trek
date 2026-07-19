@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/app/src/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
 import TaskLogo from "../app/src/icons/TaskLogo.svg";
+import CartesOffres from "./components/CartesOffres";
 import HeroTitle from "./components/HeroTitle";
 
 const features = [
@@ -23,19 +24,11 @@ const features = [
   },
 ];
 
-const itemsFree = [
-  "Dictée et transcription",
-  "Vos catégories, créées à la main",
-  "Ajout manuel à Google Agenda",
-];
-
-const itemsPremium = [
-  "Tout le plan gratuit",
-  "Classement automatique par l'IA",
-  "Catégorisation automatique",
-  "Rendez-vous ajoutés tout seuls",
-  "Rappels e-mail sur vos tâches",
-];
+// Les listes de fonctionnalites vivaient ICI, en double de celles du tableau de
+// bord. Elles avaient deja diverge: la landing promettait les rendez-vous
+// ajoutes tout seuls et les rappels e-mail sans reserve, alors que ni l'un ni
+// l'autre n'est livre. Une seule source desormais: lib/offres.ts, via
+// CartesOffres.
 
 export default function Home() {
   return (
@@ -93,66 +86,8 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="flex flex-row justify-center gap-4 max-lg:flex-col max-lg:items-center">
-          <Card style={{ width: 300 }} className="h-fit">
-            <CardContent className="py-8">
-              <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                Starter
-              </h3>
-              <div className="mt-4 text-6xl font-black">
-                <span>Gratuit</span>
-              </div>
-              <p className="mt-4 text-muted-foreground">
-                Pour tester le produit.
-              </p>
-              <div className="px-6 py-4 bg-secondary rounded-lg m-1 mt-4">
-                <ul className="space-y-3">
-                  {itemsFree.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span>✅</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/login" className="w-full">
-                  <Button className="w-full mt-4 bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
-                    Créer mon compte
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card style={{ width: 300 }} className="h-fit">
-            <CardContent className="py-8">
-              <h3 className="text-md font-black uppercase bg-purple-800 bg-opacity-20 text-purple-500 p-3 rounded-md inline">
-                Premium
-              </h3>
-              <div className="mt-4 text-6xl font-black">
-                <span>15,99 €</span>
-                <span className="text-sm text-muted-foreground">/mois</span>
-              </div>
-              <p className="mt-4 text-muted-foreground">
-                L'IA s'occupe du tri à votre place.
-              </p>
-              <div className="px-6 py-4 bg-secondary rounded-lg m-1 mt-4">
-                <ul className="space-y-3">
-                  {itemsPremium.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span>✅</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/login" className="w-full">
-                  <Button className="w-full mt-4 bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
-                    Commencer
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="mx-auto max-w-4xl">
+          <CartesOffres etat="publique" />
         </div>
       </section>
     </main>

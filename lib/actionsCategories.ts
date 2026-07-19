@@ -49,13 +49,21 @@ export const createCategory = async (formData: FormData) => {
     );
   }
 
+  // L'identifiant est RENVOYE: quand Treky propose une nouvelle categorie,
+  // l'ecran doit pouvoir la creer puis y rattacher la note dans la foulee. Sans
+  // ca il faudrait relire la liste entiere pour retrouver ce qu'on vient
+  // d'ecrire -- un aller-retour vers Frankfurt pour une valeur qu'on avait.
+  // Les autres appelants ignorent simplement ce retour.
+  let cree: { id: string };
+
   try {
-    await prisma.category.create({
+    cree = await prisma.category.create({
       data: {
         name: parsed.data.name,
         color: parsed.data.color,
         userId: user.id,
       },
+      select: { id: true },
     });
   } catch (error) {
     // @@unique([userId, name]) protege des doublons. On traduit le code Prisma
@@ -71,6 +79,8 @@ export const createCategory = async (formData: FormData) => {
 
   revalidatePath("/dashboard/categories");
   revalidatePath("/dashboard/notes");
+
+  return cree.id;
 };
 
 export const updateCategory = async (formData: FormData) => {
