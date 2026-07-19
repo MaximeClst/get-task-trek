@@ -1,12 +1,12 @@
+import { syncSubscription } from "@/lib/abonnement";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import { Stripe } from "stripe";
 
-// Un abonnement donne acces au premium tant qu'il est actif (ou en essai).
-// Tout autre statut (canceled, unpaid, past_due, incomplete...) le coupe.
-const grantsPremium = (status: Stripe.Subscription.Status) =>
-  status === "active" || status === "trialing";
+// syncSubscription vit dans lib/abonnement.ts, pas ici: la page de retour de
+// paiement s'en sert aussi pour rattraper un webhook manque. Et un route.ts
+// n'exporte que des methodes HTTP.
 
 export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
@@ -81,44 +81,4 @@ export async function POST(req: Request): Promise<Response> {
   });
 
   return new Response(null, { status: 200 });
-}
-
-// Aligne l'etat local sur l'abonnement Stripe. Une seule fonction pour tous les
-// evenements: elle est idempotente (upsert), donc un rejeu ne casse rien.
-async function syncSubscription(
-  subscription: Stripe.Subscription,
-): Promise<void> {
-  const customerId = subscription.customer as string;
-
-  const user = await prisma.user.findUnique({
-    where: { stripeCustomerId: customerId },
-  });
-  if (!user) {
-    throw new Error("User not found for customerId: " + customerId);
-  }
-
-  const premium = grantsPremium(subscription.status);
-
-  const data = {
-    status: subscription.status,
-    planId: subscription.items.data[0].plan.id,
-    interval: String(subscription.items.data[0].plan.interval),
-    currentPeriodStart: subscription.current_period_start,
-    currentPeriodEnd: subscription.current_period_end,
-  };
-
-  // upsert sur userId (unique): a la resouscription, le stripeSubscriptionId
-  // change mais l'utilisateur non. Un create violerait la contrainte @unique
-  // sur userId -- le client paierait sans recuperer son acces.
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: user.id },
-      data: { isPremium: premium },
-    }),
-    prisma.subscription.upsert({
-      where: { userId: user.id },
-      create: { stripeSubscriptionId: subscription.id, userId: user.id, ...data },
-      update: { stripeSubscriptionId: subscription.id, ...data },
-    }),
-  ]);
 }
