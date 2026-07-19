@@ -43,6 +43,10 @@ export const RATE_LIMITS = {
   // -- elle protege du cas ou l'action est appelee directement, sans passer par
   // Whisper: c'est un endpoint public, on peut lui poster du texte a la chaine.
   trier: { limit: 30, windowSeconds: 3600 },
+  // Push et retrait au calendrier. Chaque appel part chez Google, qui applique
+  // ses propres quotas par projet: se faire limiter par Google penaliserait
+  // TOUS nos utilisateurs, pas seulement celui qui martele.
+  calendrier: { limit: 30, windowSeconds: 60 },
   // Chaque appel declenche DEUX appels a l'API Stripe. Personne n'a besoin
   // d'ouvrir cinq tunnels de paiement par minute.
   createSubscription: { limit: 5, windowSeconds: 60 },

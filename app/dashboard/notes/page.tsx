@@ -1,3 +1,4 @@
+import BoutonCalendrier from "@/app/components/BoutonCalendrier";
 import ButtonDelete from "@/app/components/ButtonDelete";
 import { Button } from "@/app/src/components/ui/button";
 import { Card } from "@/app/src/components/ui/card";
@@ -77,6 +78,13 @@ export default async function PageNotes() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Seul un rendez-vous DATE peut aller dans un agenda. */}
+                {item.type === "EVENT" && item.startAt && (
+                  <BoutonCalendrier
+                    id={item.id}
+                    dansAgenda={Boolean(item.googleEventId)}
+                  />
+                )}
                 <ButtonDelete id={item.id} />
               </div>
             </Card>

@@ -10,6 +10,8 @@ import {
   firstError,
 } from "./validationNotes";
 import { enforceRateLimit } from "./rateLimit";
+import { pousserSiPremium } from "./calendrierAuto";
+import { pousserEvenement, supprimerEvenement } from "./google";
 import type { NoteType } from "@prisma/client";
 
 // Une Server Action est un endpoint HTTP public: n'importe qui peut l'appeler
@@ -110,7 +112,7 @@ export const createNote = async ({
     user.id,
   );
 
-  await prisma.note.create({
+  const note = await prisma.note.create({
     data: {
       userId: user.id,
       type: parsed.data.type,
@@ -127,6 +129,11 @@ export const createNote = async ({
     },
   });
 
+  // La note est ecrite AVANT le push, et le push n'a pas le droit de la faire
+  // perdre: pousserSiPremium avale ses erreurs. Un agenda indisponible ne doit
+  // pas coûter sa note a l'utilisateur.
+  await pousserSiPremium(note, user.isPremium);
+
   // Pas de redirect() ici: cette action est aussi appelee par
   // /api/create-note, ou NEXT_REDIRECT serait capture par le try/catch de la
   // route et renverrait un 500 alors que la note a bien ete creee.
@@ -136,6 +143,14 @@ export const createNote = async ({
 export const deleteNote = async (formData: FormData) => {
   const user = await getUser();
   const id = formData.get("id") as string;
+
+  // On lit la projection calendrier AVANT de supprimer: sans ca, l'evenement
+  // resterait orphelin dans l'agenda Google, sans plus rien qui le designe.
+  // Un aller-retour de plus, mais c'est le seul moment ou l'information existe.
+  const note = await prisma.note.findFirst({
+    where: { id, userId: user.id },
+    select: { googleEventId: true },
+  });
 
   // deleteMany porte le userId dans le WHERE: la note d'un autre ne
   // correspond a rien et reste intacte.
@@ -147,6 +162,17 @@ export const deleteNote = async (formData: FormData) => {
   // distinguer les deux revelerait quelles notes existent.
   if (count === 0) {
     throw new Error("Note introuvable.");
+  }
+
+  // La suppression en base fait foi: l'utilisateur a demande a supprimer, c'est
+  // fait. Le menage cote Google est au mieux -- echouer ici ressusciterait une
+  // note deja supprimee, ce qui serait pire qu'un evenement orphelin.
+  if (note?.googleEventId) {
+    try {
+      await supprimerEvenement(user.id, note.googleEventId);
+    } catch (error) {
+      console.error("Retrait de l'evenement Google en echec :", error);
+    }
   }
 
   revalidatePath("/dashboard/notes");
@@ -197,6 +223,27 @@ export const updateNote = async (formData: FormData) => {
 
   if (count === 0) {
     throw new Error("Note introuvable.");
+  }
+
+  // Un rendez-vous deja projete dans l'agenda doit y refleter son nouveau
+  // titre: sans ca, les deux divergent silencieusement.
+  //
+  // Le test sur le type evite de payer cet aller-retour vers Frankfurt pour
+  // une note ou une tache, qui ne vont jamais au calendrier. La base est a
+  // 9 000 km en developpement: chaque requete evitee compte.
+  if (type === "EVENT") {
+    const aJour = await prisma.note.findFirst({
+      where: { id, userId: user.id },
+    });
+
+    if (aJour?.googleEventId) {
+      try {
+        await pousserEvenement(aJour);
+      } catch (error) {
+        // Best effort: la note est deja modifiee, on ne revient pas dessus.
+        console.error("Mise a jour de l'evenement Google en echec :", error);
+      }
+    }
   }
 
   revalidatePath("/dashboard/notes");
