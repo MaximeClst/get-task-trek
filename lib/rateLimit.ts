@@ -38,6 +38,11 @@ export const RATE_LIMITS = {
   // compte a ~0,24 $/h dans le pire des cas. Fenetre horaire et non minute:
   // c'est la consommation cumulee qui coute, pas la rafale.
   transcribe: { limit: 20, windowSeconds: 3600 },
+  // Tri IA (Premium). Un appel par dictee dans l'usage normal, et la dictee est
+  // deja plafonnee en amont (20/h). Cette limite ne protege donc pas du volume
+  // -- elle protege du cas ou l'action est appelee directement, sans passer par
+  // Whisper: c'est un endpoint public, on peut lui poster du texte a la chaine.
+  trier: { limit: 30, windowSeconds: 3600 },
   // Chaque appel declenche DEUX appels a l'API Stripe. Personne n'a besoin
   // d'ouvrir cinq tunnels de paiement par minute.
   createSubscription: { limit: 5, windowSeconds: 60 },

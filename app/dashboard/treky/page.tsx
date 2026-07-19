@@ -29,6 +29,10 @@ export default async function TrekyPage() {
 
       <TrekyRecorder
         categories={categories.map(({ id, name }) => ({ id, name }))}
+        // Sert uniquement a savoir s'il faut LANCER le tri et quoi afficher.
+        // L'action de tri revérifie isPremium en base: si ce booleen etait
+        // falsifie cote client, l'appel serait refuse.
+        isPremium={user.isPremium}
         restantSecondes={usage.restantSecondes}
         quotaSecondes={usage.quotaSecondes}
         renouvelleLe={usage.renouvelleLe.toISOString()}

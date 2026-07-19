@@ -3,11 +3,13 @@
 import { Button } from "@/app/src/components/ui/button";
 import { Label } from "@/app/src/components/ui/label";
 import { Textarea } from "@/app/src/components/ui/textarea";
+import { createCategory } from "@/lib/actionsCategories";
 import { createNote } from "@/lib/actionsNotes";
+import { trierTranscript } from "@/lib/actionsTri";
 import { MAX_RECORDING_SECONDS } from "@/lib/transcription";
 import { CONTENT_MAX, TITLE_MAX } from "@/lib/validationNotes";
 import type { NoteType } from "@prisma/client";
-import { Loader2, Mic, Square } from "lucide-react";
+import { Loader2, Mic, Sparkles, Square } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +17,12 @@ import { toast } from "react-toastify";
 
 type Categorie = { id: string; name: string };
 
-type Etape = "pret" | "enregistre" | "transcrit" | "relit";
+type Etape = "pret" | "enregistre" | "transcrit" | "trie" | "relit";
+
+// Valeur sentinelle du <select> quand Treky propose une categorie qui n'existe
+// pas encore. Elle n'est jamais envoyee telle quelle: la categorie est creee au
+// moment de valider, et c'est son vrai identifiant qui part avec la note.
+const NOUVELLE_CATEGORIE = "__nouvelle__";
 
 // MediaRecorder ne produit pas le meme format partout: Chrome/Firefox font du
 // webm, Safari du mp4. On demande le premier format supporte plutot que d'en
@@ -32,13 +39,32 @@ function formaterDuree(secondes: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// <input type="datetime-local"> veut une heure LOCALE sans fuseau, alors que le
+// serveur ne manipule que de l'UTC. Les deux conversions vivent ici, au seul
+// endroit qui connait le fuseau du navigateur.
+function versChampLocal(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(
+    d.getHours()
+  )}:${p(d.getMinutes())}`;
+}
+
+function depuisChampLocal(valeur: string): string | undefined {
+  if (!valeur) return undefined;
+  const d = new Date(valeur);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
 export default function TrekyRecorder({
   categories,
+  isPremium,
   restantSecondes,
   quotaSecondes,
   renouvelleLe,
 }: {
   categories: Categorie[];
+  isPremium: boolean;
   restantSecondes: number;
   quotaSecondes: number;
   renouvelleLe: string;
@@ -57,6 +83,12 @@ export default function TrekyRecorder({
   const [type, setType] = useState<NoteType>("NOTE");
   const [categoryId, setCategoryId] = useState("");
   const [enCreation, setEnCreation] = useState(false);
+
+  // Remplis par le tri Premium. `nouvelleCategorie` n'est qu'une PROPOSITION:
+  // rien n'est cree tant que l'utilisateur n'a pas valide la note.
+  const [nouvelleCategorie, setNouvelleCategorie] = useState<string | null>(null);
+  const [debut, setDebut] = useState("");
+  const [trieParIa, setTrieParIa] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -160,12 +192,54 @@ export default function TrekyRecorder({
 
       setTranscript(donnees.text);
       // Un titre par defaut tire des premiers mots: l'utilisateur le corrige,
-      // mais il n'a pas a partir d'un champ vide.
+      // mais il n'a pas a partir d'un champ vide. En Premium, le tri le
+      // remplacera par un vrai titre juste apres.
       setTitre(donnees.text.split(/\s+/).slice(0, 8).join(" ").slice(0, TITLE_MAX));
+
+      if (isPremium) {
+        await trier(donnees.text);
+        return;
+      }
+
       setEtape("relit");
     } catch {
       toast.error("Impossible de joindre le service de transcription.");
       setEtape("pret");
+    }
+  };
+
+  // Le tri est la seule difference de traitement entre Free et Premium: la
+  // dictee et la transcription sont identiques pour tous.
+  //
+  // Un echec de tri ne fait JAMAIS perdre la transcription: on retombe sur le
+  // classement manuel, avec le texte deja saisi. Le pire cas doit etre le
+  // parcours gratuit, pas un ecran vide.
+  const trier = async (texte: string) => {
+    setEtape("trie");
+
+    try {
+      const propose = await trierTranscript({
+        transcript: texte,
+        decalageMinutes: new Date().getTimezoneOffset(),
+      });
+
+      setType(propose.type);
+      setTitre(propose.title);
+      setTranscript(propose.content);
+      setNouvelleCategorie(propose.newCategoryName);
+      setCategoryId(
+        propose.categoryId ??
+          (propose.newCategoryName ? NOUVELLE_CATEGORIE : "")
+      );
+      setDebut(propose.startAt ? versChampLocal(propose.startAt) : "");
+      setTrieParIa(true);
+    } catch (error) {
+      toast.info(
+        error instanceof Error ? error.message : "Le tri a échoué.",
+        { autoClose: 3000 }
+      );
+    } finally {
+      setEtape("relit");
     }
   };
 
@@ -174,11 +248,26 @@ export default function TrekyRecorder({
     setEnCreation(true);
 
     try {
+      // La categorie proposee par Treky n'est creee qu'ICI, une fois que
+      // l'utilisateur a valide. Trier ne doit rien ecrire: sinon une dictee
+      // abandonnee laisserait des categories derriere elle.
+      let categorieFinale = categoryId;
+
+      if (categoryId === NOUVELLE_CATEGORIE && nouvelleCategorie) {
+        const fd = new FormData();
+        fd.set("name", nouvelleCategorie);
+        categorieFinale = await createCategory(fd);
+      }
+
       await createNote({
         type,
         title: titre,
         content: transcript,
-        categoryId: categoryId || undefined,
+        categoryId: categorieFinale || undefined,
+        // Une date n'a de sens que sur une tache ou un rendez-vous. La renvoyer
+        // sur une NOTE la ferait apparaitre dans le calendrier.
+        startAt: type === "NOTE" ? undefined : depuisChampLocal(debut),
+        classifiedByAi: trieParIa,
       });
       toast.success("Note créée.", { autoClose: 1500 });
       router.push("/dashboard/notes");
@@ -195,6 +284,11 @@ export default function TrekyRecorder({
     setTranscript("");
     setTitre("");
     setSecondes(0);
+    setType("NOTE");
+    setCategoryId("");
+    setNouvelleCategorie(null);
+    setDebut("");
+    setTrieParIa(false);
     setEtape("pret");
   };
 
@@ -215,11 +309,11 @@ export default function TrekyRecorder({
           <Button
             type="button"
             onClick={demarrer}
-            disabled={etape === "transcrit" || restant <= 0}
+            disabled={etape === "transcrit" || etape === "trie" || restant <= 0}
             className="h-20 w-20 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white disabled:opacity-60"
             aria-label="Démarrer l'enregistrement"
           >
-            {etape === "transcrit" ? (
+            {etape === "transcrit" || etape === "trie" ? (
               <Loader2 className="w-7 animate-spin" />
             ) : (
               <Mic className="w-7" />
@@ -231,9 +325,11 @@ export default function TrekyRecorder({
           {etape === "enregistre" &&
             `${formaterDuree(secondes)} / ${formaterDuree(MAX_RECORDING_SECONDS)}`}
           {etape === "transcrit" && "Transcription en cours…"}
+          {etape === "trie" && "Treky range votre note…"}
           {etape === "pret" && restant > 0 && "Appuyez et dictez"}
           {etape === "pret" && restant <= 0 && "Quota mensuel épuisé"}
-          {etape === "relit" && "Relisez, corrigez, classez"}
+          {etape === "relit" &&
+            (trieParIa ? "Vérifiez, corrigez si besoin" : "Relisez, corrigez, classez")}
         </p>
 
         {/* Un plafond invisible est un plafond qui surprend: on affiche le
@@ -259,6 +355,16 @@ export default function TrekyRecorder({
       {/* --- Relecture et classement --- */}
       {etape === "relit" && (
         <div className="flex flex-col gap-4 border-t pt-4">
+          {/* Dire ce qui a ete decide par la machine, et rappeler que tout
+              reste modifiable: un champ pre-rempli sans explication donne
+              l'impression d'une erreur de saisie. */}
+          {trieParIa && (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Sparkles className="w-4 shrink-0" />
+              Treky a classé cette note. Tout reste modifiable.
+            </p>
+          )}
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="titre">Titre</Label>
             <input
@@ -313,11 +419,35 @@ export default function TrekyRecorder({
                     {c.name}
                   </option>
                 ))}
+                {/* Proposee par Treky, pas encore en base: le libelle le dit,
+                    pour que l'utilisateur sache qu'il cree quelque chose. */}
+                {nouvelleCategorie && (
+                  <option value={NOUVELLE_CATEGORIE}>
+                    {nouvelleCategorie} (nouvelle)
+                  </option>
+                )}
               </select>
             </div>
           </div>
 
-          {categories.length === 0 && (
+          {/* Une date sur une NOTE n'aurait nulle part ou aller: le champ
+              n'apparait que pour une tache ou un rendez-vous. */}
+          {type !== "NOTE" && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="debut">
+                {type === "EVENT" ? "Date et heure" : "Échéance"}
+              </Label>
+              <input
+                id="debut"
+                type="datetime-local"
+                value={debut}
+                onChange={(e) => setDebut(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+          )}
+
+          {categories.length === 0 && !nouvelleCategorie && (
             <p className="text-xs text-muted-foreground">
               Aucune catégorie —{" "}
               <Link href="/dashboard/categories" className="underline">

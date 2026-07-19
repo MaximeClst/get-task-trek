@@ -143,11 +143,27 @@ ajouter au tri.
 
 ### 2.3 Tri (Premium)
 
-- [ ] **Classement + catégorisation en une passe.** Entrée : le transcript + les catégories
-  existantes de l'utilisateur. Sortie : JSON structuré (`type`, `title`, `content`,
-  `categoryId | newCategoryName`, `startAt`).
-- [ ] **Validation Zod de la sortie** avant toute écriture en base. Un modèle qui hallucine un
-  `categoryId` ne doit pas pouvoir écrire.
+- [x] **Classement + catégorisation en une passe (PR `feat/tri-ia`).** `trierTranscript`
+  (`lib/actionsTri.ts`) : une passe `gpt-4o-mini`, entrée = transcript + catégories de
+  l'utilisateur, sortie = JSON structuré (`type`, `title`, `content`,
+  `categoryId | newCategoryName`, `startAt`). Contrainte à la source par un **JSON Schema
+  `strict`** côté OpenAI, revalidée par Zod à l'arrivée.
+  `isPremium` relu **en base**, jamais depuis la session. Un échec de tri ne fait **jamais**
+  perdre la transcription : on retombe sur le classement manuel, texte déjà saisi.
+  **L'action n'écrit rien** : elle propose un remplissage, `createNote` reste le seul chemin
+  d'écriture (donc le seul qui compte le quota de 10).
+- [x] **Validation Zod de la sortie (PR `feat/tri-ia`).** Le point qui comptait n'est pas la
+  forme mais l'**appartenance** : un `categoryId` bien formé peut désigner la catégorie d'un
+  autre compte. `resoudreCategorie()` (`lib/validationTri.ts`) vérifie l'identifiant contre la
+  liste qu'on vient de lire pour cet utilisateur — déjà en mémoire, donc **sans aller-retour
+  supplémentaire** vers Frankfurt. Un identifiant inconnu retombe sur « sans catégorie » plutôt
+  que de faire échouer le tri.
+  Prompt et résolution de catégorie vivent dans `lib/validationTri.ts`, pas dans le fichier
+  `"use server"` : ce dernier ne peut exporter que des Server Actions, ce qui les rendrait
+  intestables.
+  Vérifié : 14 cas de logique pure (fuseaux, troncature, `type` hors enum, `categoryId` d'un
+  autre compte) **plus 4 vrais appels au modèle** — « rendez-vous chez le dentiste demain à
+  quatorze heures trente » → `EVENT` daté au 24/07 14:30, dans le bon fuseau.
 
 ### 2.4 Catégories manuelles (Free)
 
