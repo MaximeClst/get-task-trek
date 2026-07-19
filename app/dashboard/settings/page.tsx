@@ -1,3 +1,4 @@
+import EncartAbonnement from "@/app/components/EncartAbonnement";
 import { Button } from "@/app/src/components/ui/button";
 import {
   Card,
@@ -18,15 +19,17 @@ export default async function PageSettings() {
 
   return (
     <section className="border border-gray-200 rounded-md p-3">
-      <h2 className="text-3xl uppercase font-black">Settings</h2>
+      <h2 className="text-3xl uppercase font-black">Réglages</h2>
       <p className="text-lg text-muted-foreground">Vos paramètres de profil</p>
 
       <div className="w-12 bg-white my-2 mx-1 h-[1px]"></div>
 
+      <EncartAbonnement premium={user.isPremium} />
+
       <form action={updateUser}>
         <Card>
           <CardHeader>
-            <CardTitle>Paramètres globales</CardTitle>
+            <CardTitle>Paramètres généraux</CardTitle>
             <CardDescription>
               Modifier vos informations puis sauvegarder.
             </CardDescription>
