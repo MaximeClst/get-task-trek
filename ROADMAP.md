@@ -200,8 +200,22 @@ ajouter au tri.
 
 ### 2.6 Rappels e-mail (Premium)
 
-- [ ] Cron Vercel → tâches à échéance proche avec `reminderSentAt` null → Resend → horodater.
-  `CRON_SECRET` et `RESEND_API_KEY` à ajouter.
+- [x] **Fait (PR `feat/rappels-email`).** Cron Vercel horaire → `/api/cron/rappels` → tâches
+  `TASK` à échéance dans les 24 h, `reminderSentAt` null, non terminées, compte Premium (lu
+  **en base**) → Resend → horodatage.
+  **Les rendez-vous sont volontairement exclus** : Google Agenda les notifie déjà, un rappel
+  serait un doublon — donc une raison de se désabonner. La valeur ajoutée est sur les tâches,
+  qui ne vivent nulle part ailleurs.
+  **L'ordre réservation → envoi** ferme la fenêtre où deux exécutions simultanées enverraient
+  le même e-mail : `updateMany({ where: { id, reminderSentAt: null } })` fait que seule la
+  première voit `count === 1`. Un envoi raté relâche la réservation et repart au tour suivant.
+  Fenêtre bornée des **deux** côtés, sans quoi la première exécution rappellerait toutes les
+  tâches en retard depuis des mois. Plafond de 100 par exécution pour tenir dans `maxDuration`.
+  Endpoint protégé par `CRON_SECRET` ; **absence de secret = 503**, pas d'endpoint ouvert.
+  14 tests.
+- [ ] **Restant : variables d'environnement et domaine Resend.** `RESEND_API_KEY`, `CRON_SECRET`
+  et `RESEND_FROM` à créer (dans `.env`, `.env.example` et Vercel), et le domaine d'envoi à
+  vérifier chez Resend — sans quoi chaque envoi échoue en « Domain not verified ».
 
 ---
 
