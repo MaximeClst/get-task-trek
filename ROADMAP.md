@@ -247,9 +247,23 @@ ajouter au tri.
 - [ ] **`event-utils.ts`** génère des identifiants avec `Math.random()` sur 1M → collisions.
 - [ ] **`getUser()` fait un aller-retour de trop** : `getServerSession` a déjà chargé la ligne
   utilisateur via l'adaptateur Prisma, et `getUser` refait un `findUnique`.
-- [ ] **ESLint** : le script `lint` existe, la config non.
-- [ ] **Tests** sur ce qui fait mal : autorisation (un user ne lit pas les notes d'un autre),
-  webhook Stripe (résiliation, réabonnement), suppression de compte avec données.
+- [x] **ESLint configuré et qui passe (PR `chore/eslint-vitest`).** `eslint` + `eslint-config-next`
+  installés (ils ne l'étaient pas, malgré le script `lint`), `.eslintrc.json` sur
+  `next/core-web-vitals`. Une seule erreur réelle dans tout le code, corrigée.
+- [x] **Tests — 51 tests, 5 fichiers (PR `chore/eslint-vitest`).** vitest, base et SDK externes
+  simulés : ni réseau ni base, donc exécutables en CI.
+  - **autorisation** : le `userId` est dans le `WHERE`, pas dans un test après coup ; message
+    identique pour une note inexistante et celle d'un autre ; `categoryId` d'autrui refusé ;
+    quota de 10 notes ; un compte gratuit ne peut pas se déclarer trié par l'IA.
+  - **webhook Stripe** : la résiliation retire bien `isPremium` (le bug v1), `upsert` et non
+    `create` au réabonnement, écriture en une seule transaction.
+  - **suppression de compte** : un seul `delete`, aucune table vidée à la main — c'est la liste
+    manuelle qui *était* le bug.
+  - **tri IA** : `categoryId` d'un autre compte ignoré, fuseaux horaires, troncature du titre.
+  - **calendrier** : la date de fin exclusive d'un événement « toute la journée ».
+  Choix : vitest plutôt que `node:test` pour `vi.mock`, sans lequel on ne peut pas simuler Prisma.
+- [ ] **Brancher lint et tests sur une CI** (GitHub Actions). Écrits mais non exécutés
+  automatiquement : rien ne les lance à la PR aujourd'hui.
 - [ ] **README** : encore celui de `create-next-app`.
 - [ ] **`getStripeSession` dupliqué** : `lib/stripe.ts` en exporte une version que personne
   n'utilise, `lib/actionsStripe.ts` a la sienne en privé.

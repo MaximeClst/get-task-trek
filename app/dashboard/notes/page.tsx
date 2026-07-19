@@ -36,7 +36,7 @@ export default async function PageNotes() {
           <div className="w-16 h-16 rounded-full flex items-center justify-center bg-purple-800 bg-opacity-20 mb-4">
             <File />
           </div>
-          <p className="">Vous n'avez aucune note</p>
+          <p>Vous n&apos;avez aucune note</p>
           <Button className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white mt-4">
             <Link href="/dashboard/notes/create">Crée une nouvelle note</Link>
           </Button>

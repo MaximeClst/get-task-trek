@@ -45,11 +45,16 @@ const dateString = z
 // Chaine vide -> undefined: un <select> non renseigne envoie "", qui n'est pas
 // un identifiant. L'APPARTENANCE de cette categorie est verifiee separement,
 // dans l'action -- Zod ne peut valider qu'une forme, pas un proprietaire.
+//
+// null est accepte au meme titre que "": formData.get() rend null pour un
+// champ ABSENT, et ces actions sont des endpoints publics -- on peut leur
+// poster un formulaire sans ce champ. Sans ca, l'appel echouait sur un
+// "Expected string, received null" qui ne dit rien a personne, alors que
+// l'absence de categorie est un cas parfaitement normal.
 const categoryId = z
   .string()
-  .trim()
-  .transform((value) => value || undefined)
-  .optional();
+  .nullish()
+  .transform((value) => value?.trim() || undefined);
 
 export const createNoteSchema = z.object({
   type: noteType.default("NOTE"),
