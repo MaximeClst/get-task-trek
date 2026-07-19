@@ -277,8 +277,19 @@ implicitement par NextAuth et Prisma) mais sont requises — un `grep process.en
 pnpm install --frozen-lockfile
 npx prisma generate            # sinon: types Prisma manquants → faux TS7006
 node node_modules/typescript/lib/tsc.js --noEmit   # npx tsc ne marche pas (paquet "tsc" pirate)
+pnpm lint                                          # ESLint, doit passer
+pnpm test                                          # vitest, ne touche ni la base ni le réseau
 NEXT_DIST_DIR=.next-verify pnpm build              # voir ci-dessous
 ```
+
+Les tests vivent dans `tests/`, la base et les SDK externes y sont simulés (`vi.mock`). Ils
+couvrent ce qui fait mal : autorisation, webhook Stripe, suppression de compte, tri IA,
+projection calendrier. **Un test qui exige un vrai service n'a pas sa place là** — il ne
+passerait pas en CI, et on finirait par le désactiver.
+
+⚠️ Les fichiers de test doivent utiliser des **imports statiques**, pas `await import()` :
+`vi.mock` est hoisté par vitest, et un `await` de haut niveau fait échouer `tsc --noEmit`
+avec le `module` du projet.
 
 ⚠️ **Ne jamais lancer `pnpm build` nu pendant que `next dev` tourne.** Les deux écrivent dans
 `.next/` : le build écrase les chunks servis par le serveur de dev, et **la page perd son CSS**
