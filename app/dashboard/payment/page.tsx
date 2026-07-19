@@ -17,7 +17,7 @@ export default async function PagePayment() {
         </p>
       </div>
 
-      <CartesOffres premium={user.isPremium} />
+      <CartesOffres etat={user.isPremium ? "premium" : "gratuit"} />
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
         Paiement géré par Stripe. Résiliable à tout moment, sans engagement.

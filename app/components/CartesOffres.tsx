@@ -8,12 +8,20 @@ import {
   type Avantage,
 } from "@/lib/offres";
 import { Check } from "lucide-react";
+import Link from "next/link";
 
-// Presentation pure: l'etat d'abonnement arrive en PROP, il n'est pas lu ici.
-// C'est la page qui le resout via getUser(), donc en base. Ce composant ne
-// decide de rien -- il ne fait qu'afficher, ce qui le rend regardable hors
-// authentification.
-export default function CartesOffres({ premium }: { premium: boolean }) {
+// Trois etats, pas deux booleens: la landing est vue par des visiteurs NON
+// connectes, pour qui "offre actuelle" ne veut rien dire et pour qui le tunnel
+// Stripe n'est pas joignable -- ils doivent d'abord creer un compte.
+export type EtatOffre = "publique" | "gratuit" | "premium";
+
+// Presentation pure: l'etat arrive en PROP, il n'est pas lu ici. C'est la page
+// qui le resout via getUser(), donc en base. Ce composant ne decide de rien --
+// il ne fait qu'afficher, ce qui le rend regardable hors authentification.
+export default function CartesOffres({ etat }: { etat: EtatOffre }) {
+  const premium = etat === "premium";
+  const publique = etat === "publique";
+
   return (
     <div className="grid gap-6 md:grid-cols-2 md:items-start">
       {/* --- Gratuit --- */}
@@ -26,13 +34,21 @@ export default function CartesOffres({ premium }: { premium: boolean }) {
         </p>
 
         <div className="mt-6">
-          <Button
-            variant={premium ? "outline" : "secondary"}
-            disabled
-            className="w-full"
-          >
-            {premium ? "Inclus dans Premium" : "Offre actuelle"}
-          </Button>
+          {publique ? (
+            <Link href="/login" className="block">
+              <Button variant="secondary" className="w-full">
+                Créer mon compte
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              variant={premium ? "outline" : "secondary"}
+              disabled
+              className="w-full"
+            >
+              {premium ? "Inclus dans Premium" : "Offre actuelle"}
+            </Button>
+          )}
         </div>
 
         <ListeAvantages avantages={OFFRE_FREE.avantages} />
@@ -52,7 +68,17 @@ export default function CartesOffres({ premium }: { premium: boolean }) {
         <p className="mt-2 text-sm text-zinc-400">{OFFRE_PREMIUM.resume}</p>
 
         <div className="mt-6">
-          {premium ? (
+          {publique ? (
+            // Un visiteur non connecte ne peut pas ouvrir le tunnel Stripe:
+            // createSubscription exige un compte et un stripeCustomerId. On
+            // l'envoie donc creer son compte, pas vers un formulaire qui
+            // echouerait.
+            <Link href="/login" className="block">
+              <Button className="w-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white">
+                Commencer
+              </Button>
+            </Link>
+          ) : premium ? (
             // Le portail Stripe est le seul endroit ou l'on resilie ou change
             // de moyen de paiement: on ne reimplemente pas ca chez nous.
             <form action={createCustomerPortal}>
