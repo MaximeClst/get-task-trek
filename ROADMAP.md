@@ -78,10 +78,10 @@ Ordre : les blocages d'abord, le produit ensuite, le lancement en dernier.
   Vérifié sur la base, dont le cas qui fait la différence : **20 requêtes simultanées, exactement
   5 passent**. Un limiteur qui lit puis écrit échouerait ici.
   Choix assumé : **fail-open** si le limiteur lui-même tombe (voir commentaire dans le fichier).
-- [ ] **Plafonner Whisper au tier gratuit.** Le point ci-dessus pose la mécanique ; il reste à
-  l'appliquer à la transcription quand elle existera, avec en plus un **garde-fou de durée
-  d'enregistrement**. C'est le seul appel IA du tier gratuit, donc le seul coût variable qu'un
-  compte gratuit peut nous faire payer — et le multi-compte Google ne se bloque pas (§4).
+- [x] **Plafonner Whisper au tier gratuit — fait**, voir §2.2. Trois garde-fous empilés : durée
+  d'enregistrement (2 min), débit (20 dictées/h), et surtout un **plafond mensuel en secondes
+  réelles** facturées par OpenAI (Free 30 min, Premium 10 h). Reste vrai : le multi-compte Google
+  ne se bloque pas, donc le plafond protège le compte, pas la personne.
 
 ---
 
@@ -255,10 +255,10 @@ ajouter au tri.
 - [x] **Code mort — `lib/createNote.ts` et `app/api/limitNote.ts` supprimés** (PR
   `fix/limites-saisie`). Handlers Pages Router jamais routés, mais qui portaient une logique de
   quota **concurrente** fondée sur `notesCount`.
-- [ ] **`User.notesCount` et l'enum `Plan`** restent à supprimer (migration). `notesCount` n'a
-  plus aucun lecteur depuis la suppression ci-dessus. À faire avec la fusion `Notes`/`Event`,
-  pour ne pas multiplier les migrations sur des tables destinées à changer.
-- [ ] **`event-utils.ts`** génère des identifiants avec `Math.random()` sur 1M → collisions.
+- [x] **`User.notesCount` et l'enum `Plan` supprimés** — emportés par la migration de fusion
+  `Notes`/`Event` (§2.1), comme prévu. Plus aucune trace ni au schéma ni au code.
+- [x] **`event-utils.ts` supprimé** avec l'assistant factice (PR `chore/supprime-faux-assistant`).
+  Le `Math.random()` sur 1M identifiants est parti avec. Plus aucun `Math.random()` dans le code.
 - [ ] **`getUser()` fait un aller-retour de trop** : `getServerSession` a déjà chargé la ligne
   utilisateur via l'adaptateur Prisma, et `getUser` refait un `findUnique`.
 - [x] **ESLint configuré et qui passe (PR `chore/eslint-vitest`).** `eslint` + `eslint-config-next`
@@ -276,11 +276,21 @@ ajouter au tri.
   - **tri IA** : `categoryId` d'un autre compte ignoré, fuseaux horaires, troncature du titre.
   - **calendrier** : la date de fin exclusive d'un événement « toute la journée ».
   Choix : vitest plutôt que `node:test` pour `vi.mock`, sans lequel on ne peut pas simuler Prisma.
-- [ ] **Brancher lint et tests sur une CI** (GitHub Actions). Écrits mais non exécutés
-  automatiquement : rien ne les lance à la PR aujourd'hui.
-- [ ] **README** : encore celui de `create-next-app`.
-- [ ] **`getStripeSession` dupliqué** : `lib/stripe.ts` en exporte une version que personne
-  n'utilise, `lib/actionsStripe.ts` a la sienne en privé.
+- [x] **CI branchée (PR `chore/ci`)** — `.github/workflows/ci.yml` lance lint, types, tests et
+  build à chaque PR.
+- [x] **README réel (PR `chore/menage-dette`).** Celui de `create-next-app` remplacé : produit,
+  frontière Free/Premium, démarrage, procédure de vérification, et les pièges qui coûtent une
+  demi-heure quand on ne les connaît pas (`npx tsc` pirate, build nu pendant `next dev`,
+  `node_modules` corrompu).
+- [x] **`getStripeSession` dédupliqué (PR `chore/menage-dette`).** Il en existait **deux**, et
+  elles avaient déjà divergé : celle de `lib/stripe.ts`, exportée mais importée par personne,
+  posait `billing_address_collection` et `customer_update` ; celle d'`actionsStripe.ts`, privée,
+  faisait le travail sans. Deux définitions d'un appel facturable qui s'écartent en silence.
+  La version **effectivement utilisée** est conservée telle quelle et remontée dans `lib/stripe.ts`
+  — aucun changement de comportement au checkout. Le `as string` sur `session.url` (qui peut être
+  `null`) tombe au passage : le type dit `string | null`, l'appelant vérifiait déjà.
+  **Question ouverte, volontairement non tranchée ici :** faut-il *réellement* collecter l'adresse
+  de facturation ? C'est un arbitrage produit (TVA UE), pas un ménage — à décider à part.
 
 ---
 
