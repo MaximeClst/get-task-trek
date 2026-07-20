@@ -216,6 +216,20 @@ ajouter au tri.
 - [ ] **Restant : variables d'environnement et domaine Resend.** `RESEND_API_KEY`, `CRON_SECRET`
   et `RESEND_FROM` à créer (dans `.env`, `.env.example` et Vercel), et le domaine d'envoi à
   vérifier chez Resend — sans quoi chaque envoi échoue en « Domain not verified ».
+- [ ] **Vérifier la fréquence de cron réellement appliquée par Vercel.** `vercel.json` demande
+  `"0 * * * *"` (horaire), mais le plan **Hobby** restreint les crons — vraisemblablement à un
+  déclenchement **quotidien**. Non confirmé dans la doc : après un deploy en production,
+  `vercel crons ls` donne le planning réel. Si l'horaire ne passe pas, l'endpoint n'est qu'un
+  `GET` protégé par `Authorization: Bearer $CRON_SECRET` — **rien ne nous lie à Vercel Cron**,
+  un workflow `schedule` GitHub Actions (déjà en place pour la CI, gratuit) fait le même travail.
+- [x] **Question tranchée le 2026-07-20 : les rappels e-mail font-ils doublon avec Google ?**
+  Non. Seuls les `EVENT` sont poussés dans Google (`calendrierAuto.ts` sort tôt sur tout autre
+  type) : une **tâche ne quitte jamais Task Trek**, donc Google ne peut pas la rappeler. C'est
+  précisément le trou que l'e-mail comble, et la seule chose de la boucle que Google ne fait pas
+  gratuitement à notre place.
+  Reste ouvert, mais non retenu pour l'instant : pousser aussi les **tâches** vers Google. Ça
+  rendrait l'e-mail inutile, mais une tâche n'est pas un créneau — la projeter en événement
+  salirait l'agenda, et le bon réceptacle (Google Tasks) est une autre API et un autre scope.
 
 ---
 
@@ -261,6 +275,14 @@ ajouter au tri.
   Le `Math.random()` sur 1M identifiants est parti avec. Plus aucun `Math.random()` dans le code.
 - [ ] **`getUser()` fait un aller-retour de trop** : `getServerSession` a déjà chargé la ligne
   utilisateur via l'adaptateur Prisma, et `getUser` refait un `findUnique`.
+  **Décidé le 2026-07-20 : on ne touche pas, on verra avec de vrais utilisateurs en test.**
+  Deux raisons. Le gain est du **confort de dev uniquement** — en production Vercel `fra1` est à
+  côté de Neon, l'aller-retour coûte quelques millisecondes. Et le prix est un couplage tacite :
+  réutiliser la ligne chargée par l'adaptateur rendrait la fraîcheur d'`isPremium` dépendante du
+  fait qu'on reste en **sessions base**. Le jour où quelqu'un passe en `strategy: "jwt"` (envisagé
+  au §1 pour Next 15), `isPremium` redeviendrait une valeur figée dans le cookie **partout et en
+  silence** — le bug que `fix/premium-serveur` a corrigé. Si on le fait un jour, l'accompagner
+  d'un test qui échoue explicitement quand la stratégie de session change.
 - [x] **ESLint configuré et qui passe (PR `chore/eslint-vitest`).** `eslint` + `eslint-config-next`
   installés (ils ne l'étaient pas, malgré le script `lint`), `.eslintrc.json` sur
   `next/core-web-vitals`. Une seule erreur réelle dans tout le code, corrigée.
