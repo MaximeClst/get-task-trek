@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { abonnementActifChezStripe } from "./abonnement";
 import { getUser } from "./session";
 import { prisma } from "./db";
-import { stripe } from "./stripe";
+import { getStripeSession, stripe } from "./stripe";
 import { enforceRateLimit } from "./rateLimit";
 
 // L'userId n'est PLUS un argument. Cette fonction est exportee d'un fichier
@@ -134,32 +134,6 @@ export const createCustomerPortal = async () => {
     return redirect(session.url);
   } catch (error) {
     console.error("Error creating customer portal:", error);
-    throw error;
-  }
-};
-
-const getStripeSession = async ({
-  priceId,
-  domainUrl,
-  customerId,
-}: {
-  priceId: string;
-  domainUrl: string;
-  customerId: string;
-}) => {
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
-      customer: customerId,
-      success_url: `${domainUrl}/dashboard/payment/success`,
-      cancel_url: `${domainUrl}/dashboard/payment/cancel`,
-    });
-
-    return session.url;
-  } catch (error) {
-    console.error("Erreur lors de la création de la session Stripe :", error);
     throw error;
   }
 };
